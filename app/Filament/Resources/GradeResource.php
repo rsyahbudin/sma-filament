@@ -97,7 +97,8 @@ class GradeResource extends Resource
                     ->label('Student')
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn($state, $record) => $record->student?->name ?? '-'),
+                    ->formatStateUsing(fn($state, $record) => $record->student?->name ?? '-')
+                    ->visible(fn() => Auth::user()->role->name !== 'Student'),
                 Tables\Columns\TextColumn::make('subject.name')
                     ->label('Subject')
                     ->searchable()
@@ -129,7 +130,8 @@ class GradeResource extends Resource
                     ->relationship('student', 'name')
                     ->searchable()
                     ->preload()
-                    ->label('Student'),
+                    ->label('Student')
+                    ->visible(fn() => Auth::user()->role->name !== 'Student'),
                 Tables\Filters\SelectFilter::make('subject')
                     ->relationship('subject', 'name')
                     ->searchable()
@@ -153,12 +155,37 @@ class GradeResource extends Resource
                     ->label('Semester'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher'),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher'),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('downloadReport')
+                    ->label('Download Report Card')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function () {
+                        $user = Auth::user();
+                        $grades = Grade::where('user_id', $user->id)
+                            ->with(['student', 'subject', 'class', 'academicYear'])
+                            ->get()
+                            ->groupBy(['academic_year_id', 'semester']);
+
+                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.report-card', [
+                            'student' => $user,
+                            'grades' => $grades,
+                        ]);
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, "report-card-{$user->name}.pdf");
+                    })
+                    ->visible(fn() => Auth::user()->role->name === 'Student'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn() => Auth::user()->role->name === 'Teacher'),
                 ]),
             ])
             ->modifyQueryUsing(fn(Builder $query) => $query->with(['student', 'subject', 'class', 'academicYear']));
@@ -217,7 +244,7 @@ class GradeResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->role->name === 'Admin' || Auth::user()->role->name === 'Teacher';
+        return Auth::user()->role->name === 'Admin' || Auth::user()->role->name === 'Teacher' || Auth::user()->role->name === 'Student';
     }
 
     public static function canCreate(): bool
@@ -233,5 +260,16 @@ class GradeResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return Auth::user()->role->name === 'Teacher';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (Auth::user()->role->name === 'Student') {
+            return $query->where('user_id', Auth::id());
+        }
+
+        return $query;
     }
 }

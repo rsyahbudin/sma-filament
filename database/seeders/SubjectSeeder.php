@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Subject;
 use Illuminate\Database\Seeder;
+use App\Models\Subject;
+use App\Models\User;
 
 class SubjectSeeder extends Seeder
 {
@@ -12,47 +13,22 @@ class SubjectSeeder extends Seeder
      */
     public function run(): void
     {
+        $teachers = User::whereHas('role', function ($q) {
+            $q->where('name', 'Teacher');
+        })->pluck('id');
         $subjects = [
-            [
-                'name' => 'Matematika',
-                'code' => 'MTK',
-                'description' => 'Mata pelajaran Matematika',
-                'minimum_score' => 70,
-            ],
-            [
-                'name' => 'Bahasa Indonesia',
-                'code' => 'BIN',
-                'description' => 'Mata pelajaran Bahasa Indonesia',
-                'minimum_score' => 70,
-            ],
-            [
-                'name' => 'Bahasa Inggris',
-                'code' => 'BIG',
-                'description' => 'Mata pelajaran Bahasa Inggris',
-                'minimum_score' => 70,
-            ],
-            [
-                'name' => 'Fisika',
-                'code' => 'FIS',
-                'description' => 'Mata pelajaran Fisika',
-                'minimum_score' => 70,
-            ],
-            [
-                'name' => 'Kimia',
-                'code' => 'KIM',
-                'description' => 'Mata pelajaran Kimia',
-                'minimum_score' => 70,
-            ],
-            [
-                'name' => 'Biologi',
-                'code' => 'BIO',
-                'description' => 'Mata pelajaran Biologi',
-                'minimum_score' => 70,
-            ],
+            ['name' => 'Matematika', 'code' => 'MTK'],
+            ['name' => 'Bahasa Indonesia', 'code' => 'BIN'],
+            ['name' => 'Fisika', 'code' => 'FIS'],
+            ['name' => 'Kimia', 'code' => 'KIM'],
+            ['name' => 'Ekonomi', 'code' => 'EKO'],
         ];
-
         foreach ($subjects as $subject) {
-            Subject::create($subject);
+            Subject::create([
+                'name' => $subject['name'],
+                'code' => $subject['code'],
+                'teacher_id' => $teachers->random(),
+            ]);
         }
     }
 }

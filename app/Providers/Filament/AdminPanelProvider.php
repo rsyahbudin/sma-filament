@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
@@ -15,8 +14,15 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Filament\Widgets\AdminStatsOverview;
+use App\Filament\Widgets\StudentStatsOverview;
+use App\Filament\Widgets\TeachersPerGenderChart;
+use App\Filament\Widgets\StudentsPerClassChart;
+use App\Filament\Widgets\SubjectAverageGradesChart;
+use Illuminate\Support\Facades\Auth;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -39,6 +45,11 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
+                AdminStatsOverview::class,
+                StudentStatsOverview::class,
+                TeachersPerGenderChart::class,
+                StudentsPerClassChart::class,
+                SubjectAverageGradesChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

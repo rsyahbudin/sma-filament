@@ -15,10 +15,13 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             AcademicYearSeeder::class,
-            SubjectSeeder::class,
             SchoolClassSeeder::class,
-            GradeSeeder::class,
+            SubjectSeeder::class,
+            TeacherSubjectSeeder::class,
             StudentClassSeeder::class,
+            ClassSubjectSeeder::class,
+            GradeSeeder::class,
+            ScheduleSeeder::class,
         ]);
     }
 }

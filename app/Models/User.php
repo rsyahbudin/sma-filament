@@ -80,7 +80,7 @@ class User extends Authenticatable
 
     public function classes(): BelongsToMany
     {
-        return $this->belongsToMany(SchoolClass::class, 'student_class', 'user_id', 'school_class_id')
+        return $this->belongsToMany(SchoolClass::class, 'student_class', 'student_id', 'school_class_id')
             ->withPivot('is_promoted', 'academic_year_id')
             ->withTimestamps();
     }

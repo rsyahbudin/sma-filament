@@ -15,7 +15,7 @@ return new class extends Migration
             $table->engine = 'InnoDB';
             $table->id();
             $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('class_id')->constrained('school_classes')->onDelete('cascade');
+            $table->foreignId('school_class_id')->constrained('school_classes')->onDelete('cascade');
             $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
             $table->boolean('is_promoted')->default(false);
             $table->timestamps();

@@ -11,22 +11,18 @@ class StudentClassSeeder extends Seeder
 {
     public function run(): void
     {
-        $students = User::whereHas('role', function ($query) {
-            $query->where('name', 'Student');
+        $students = User::whereHas('role', function ($q) {
+            $q->where('name', 'Student');
         })->get();
-
         $classes = SchoolClass::all();
-        $academicYears = AcademicYear::all();
-
+        $years = AcademicYear::all();
         foreach ($students as $student) {
-            // Assign student to 1-2 random classes
-            $randomClasses = $classes->random(rand(1, 2));
-            foreach ($randomClasses as $class) {
-                $student->classes()->attach($class->id, [
-                    'is_promoted' => rand(0, 1),
-                    'academic_year_id' => $academicYears->random()->id,
-                ]);
-            }
+            $class = $classes->random();
+            $year = $years->random();
+            $student->classes()->attach($class->id, [
+                'is_promoted' => false,
+                'academic_year_id' => $year->id,
+            ]);
         }
     }
 }

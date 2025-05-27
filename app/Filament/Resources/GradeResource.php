@@ -229,16 +229,26 @@ class GradeResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        if (Auth::user()->role->name === 'Student') {
+            return static::getModel()::where('user_id', Auth::id())->count();
+        }
         return static::getModel()::count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
+        if (Auth::user()->role->name === 'Student') {
+            $count = static::getModel()::where('user_id', Auth::id())->count();
+            return $count > 0 ? 'success' : 'warning';
+        }
         return static::getModel()::count() > 10 ? 'warning' : 'primary';
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
+        if (Auth::user()->role->name === 'Student') {
+            return 'Total Nilai Anda';
+        }
         return 'Total Penilaian';
     }
 

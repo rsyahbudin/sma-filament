@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ReportResource extends Resource
 {
@@ -81,5 +82,15 @@ class ReportResource extends Resource
             'index' => Pages\ListReports::route('/'),
             'view-report' => Pages\ViewReport::route('/{record}/report'),
         ];
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 3;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role->name !== 'Student';
     }
 }

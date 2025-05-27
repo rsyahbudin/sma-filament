@@ -103,6 +103,10 @@ class GradeResource extends Resource
                     ->label('Subject')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('subject.teacher.name')
+                    ->label('Teacher')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('class.name')
                     ->label('Class')
                     ->searchable()

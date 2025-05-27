@@ -81,6 +81,13 @@ class SubjectResource extends Resource
                     ->default(70)
                     ->minValue(0)
                     ->maxValue(100),
+                Forms\Components\Select::make('teachers')
+                    ->label('Teachers')
+                    ->relationship('teachers', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->required(),
             ]);
     }
 
@@ -92,6 +99,11 @@ class SubjectResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('code')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('teachers.name')
+                    ->label('Teachers')
+                    ->listWithLineBreaks()
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('minimum_score')
                     ->numeric()
                     ->sortable(),

@@ -14,12 +14,14 @@ class Subject extends Model
         'code',
         'description',
         'minimum_score',
-        'teacher_id',
     ];
 
-    public function teacher()
+    public function teachers()
     {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return $this->belongsToMany(User::class, 'teacher_subject')
+            ->whereHas('role', function ($query) {
+                $query->where('name', 'Teacher');
+            });
     }
 
     public function grades()

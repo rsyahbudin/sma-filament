@@ -97,6 +97,7 @@ class TeacherResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -141,5 +142,15 @@ class TeacherResource extends Resource
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 }

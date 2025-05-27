@@ -103,6 +103,7 @@ class StudentResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\Action::make('promote')
@@ -192,5 +193,25 @@ class StudentResource extends Resource
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return auth()->user()->role->name === 'Admin';
     }
 }

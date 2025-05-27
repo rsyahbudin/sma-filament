@@ -41,3 +41,4 @@ class ScheduleSeeder extends Seeder
         }
     }
 }
+ 

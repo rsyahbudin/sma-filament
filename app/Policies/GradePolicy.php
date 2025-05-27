@@ -36,3 +36,4 @@ class GradePolicy extends BasePolicy
         return in_array($user->role->name, ['Admin', 'Teacher', 'Student']);
     }
 }
+ 

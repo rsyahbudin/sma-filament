@@ -77,15 +77,20 @@ class GradeResource extends Resource
                     ->options([
                         1 => 'Semester 1',
                         2 => 'Semester 2',
+                        3 => 'Semester 3',
+                        4 => 'Semester 4',
+                        5 => 'Semester 5',
+                        6 => 'Semester 6',
                     ])
                     ->required(),
                 Forms\Components\TextInput::make('score')
-                    ->numeric()
                     ->required()
+                    ->numeric()
                     ->minValue(0)
                     ->maxValue(100),
                 Forms\Components\Textarea::make('notes')
-                    ->maxLength(255),
+                    ->maxLength(65535)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -103,7 +108,7 @@ class GradeResource extends Resource
                     ->label('Subject')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('subject.teacher.name')
+                Tables\Columns\TextColumn::make('subject.teachers.name')
                     ->label('Teacher')
                     ->searchable()
                     ->sortable(),

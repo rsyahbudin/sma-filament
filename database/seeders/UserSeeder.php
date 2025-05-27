@@ -14,72 +14,86 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get role IDs
+        // Create admin
         $adminRole = Role::where('name', 'Admin')->first();
+        User::create([
+            'name' => 'Admin Satu',
+            'email' => 'admin1@example.com',
+            'password' => Hash::make('password'),
+            'role_id' => $adminRole->id,
+            'gender' => 'male',
+            'phone' => '081234567887',
+            'address' => 'Jl. Admin No. 95',
+            'date_of_birth' => '1990-01-01',
+        ]);
+
+        // Create 12 teachers
         $teacherRole = Role::where('name', 'Teacher')->first();
-        $studentRole = Role::where('name', 'Student')->first();
-
-        // Admins
-        $admins = [
-            ['name' => 'Admin Satu', 'email' => 'admin1@example.com', 'gender' => 'male'],
-            ['name' => 'Admin Dua', 'email' => 'admin2@example.com', 'gender' => 'female'],
-            ['name' => 'Admin Tiga', 'email' => 'admin3@example.com', 'gender' => 'male'],
-            ['name' => 'Admin Empat', 'email' => 'admin4@example.com', 'gender' => 'female'],
-            ['name' => 'Admin Lima', 'email' => 'admin5@example.com', 'gender' => 'male'],
+        $teacherNames = [
+            'Budi Santoso',
+            'Siti Aminah',
+            'Ahmad Hidayat',
+            'Dewi Lestari',
+            'Rudi Hartono',
+            'Nina Wijaya',
+            'Muhammad Ali',
+            'Linda Sari',
+            'Joko Widodo',
+            'Ani Susanti',
+            'Herman Setiawan',
+            'Rina Putri'
         ];
-        foreach ($admins as $admin) {
-            User::create([
-                'name' => $admin['name'],
-                'email' => $admin['email'],
-                'password' => Hash::make('password'),
-                'role_id' => $adminRole->id,
-                'gender' => $admin['gender'],
-                'phone' => '0812345678' . rand(10, 99),
-                'address' => 'Jl. Admin No. ' . rand(1, 99),
-                'date_of_birth' => '1990-01-01',
-            ]);
-        }
 
-        // Teachers
-        $teachers = [
-            ['name' => 'Budi Santoso', 'email' => 'budi.santoso@example.com', 'gender' => 'male'],
-            ['name' => 'Siti Aminah', 'email' => 'siti.aminah@example.com', 'gender' => 'female'],
-            ['name' => 'Agus Prasetyo', 'email' => 'agus.prasetyo@example.com', 'gender' => 'male'],
-            ['name' => 'Dewi Lestari', 'email' => 'dewi.lestari@example.com', 'gender' => 'female'],
-            ['name' => 'Rudi Hartono', 'email' => 'rudi.hartono@example.com', 'gender' => 'male'],
-        ];
-        foreach ($teachers as $teacher) {
+        foreach ($teacherNames as $index => $name) {
             User::create([
-                'name' => $teacher['name'],
-                'email' => $teacher['email'],
+                'name' => $name,
+                'email' => 'guru' . ($index + 1) . '@example.com',
                 'password' => Hash::make('password'),
                 'role_id' => $teacherRole->id,
-                'gender' => $teacher['gender'],
-                'phone' => '0812345678' . rand(10, 99),
-                'address' => 'Jl. Guru No. ' . rand(1, 99),
-                'date_of_birth' => '1985-01-01',
+                'gender' => $index % 2 == 0 ? 'male' : 'female',
+                'phone' => '08' . rand(1000000000, 9999999999),
+                'address' => 'Jl. Guru No. ' . ($index + 1),
+                'date_of_birth' => rand(1980, 1990) . '-' . str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
             ]);
         }
 
-        // Students
-        $students = [
-            ['name' => 'Andi Wijaya', 'email' => 'andi.wijaya@example.com', 'gender' => 'male'],
-            ['name' => 'Putri Ayu', 'email' => 'putri.ayu@example.com', 'gender' => 'female'],
-            ['name' => 'Joko Susilo', 'email' => 'joko.susilo@example.com', 'gender' => 'male'],
-            ['name' => 'Rina Marlina', 'email' => 'rina.marlina@example.com', 'gender' => 'female'],
-            ['name' => 'Dedi Kurniawan', 'email' => 'dedi.kurniawan@example.com', 'gender' => 'male'],
+        // Create students (5 per class)
+        $studentRole = Role::where('name', 'Student')->first();
+        $classes = [
+            'X IPA 1',
+            'X IPA 2',
+            'X IPS 1',
+            'X IPS 2',
+            'XI IPA 1',
+            'XI IPA 2',
+            'XI IPS 1',
+            'XI IPS 2',
+            'XII IPA 1',
+            'XII IPA 2',
+            'XII IPS 1',
+            'XII IPS 2'
         ];
-        foreach ($students as $student) {
-            User::create([
-                'name' => $student['name'],
-                'email' => $student['email'],
-                'password' => Hash::make('password'),
-                'role_id' => $studentRole->id,
-                'gender' => $student['gender'],
-                'phone' => '0812345678' . rand(10, 99),
-                'address' => 'Jl. Siswa No. ' . rand(1, 99),
-                'date_of_birth' => '2005-01-01',
-            ]);
+
+        $studentIndex = 1;
+        foreach ($classes as $class) {
+            for ($i = 1; $i <= 5; $i++) {
+                $gender = rand(0, 1) ? 'male' : 'female';
+                $name = $gender == 'male' ?
+                    'Siswa ' . $class . ' ' . $i :
+                    'Siswi ' . $class . ' ' . $i;
+
+                User::create([
+                    'name' => $name,
+                    'email' => 'siswa' . $studentIndex . '@example.com',
+                    'password' => Hash::make('password'),
+                    'role_id' => $studentRole->id,
+                    'gender' => $gender,
+                    'phone' => '08' . rand(1000000000, 9999999999),
+                    'address' => 'Jl. Siswa No. ' . $studentIndex,
+                    'date_of_birth' => rand(2005, 2007) . '-' . str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
+                ]);
+                $studentIndex++;
+            }
         }
     }
 }

@@ -14,24 +14,35 @@ class SchoolClassSeeder extends Seeder
      */
     public function run(): void
     {
-        $years = AcademicYear::all();
-        $teachers = User::whereHas('role', function ($q) {
-            $q->where('name', 'Teacher');
-        })->pluck('id');
-        $classes = [
-            ['name' => 'X IPA 1', 'code' => 'X-IPA-1'],
-            ['name' => 'X IPA 2', 'code' => 'X-IPA-2'],
-            ['name' => 'XI IPA 1', 'code' => 'XI-IPA-1'],
-            ['name' => 'XI IPA 2', 'code' => 'XI-IPA-2'],
-            ['name' => 'X IPS 1', 'code' => 'X-IPS-1'],
-        ];
-        foreach ($classes as $class) {
-            SchoolClass::create([
-                'name' => $class['name'],
-                'code' => $class['code'],
-                'academic_year_id' => $years->random()->id,
-                'teacher_id' => $teachers->random(),
-            ]);
+        $gradeLevels = ['X', 'XI', 'XII'];
+        $classTypes = ['IPA', 'IPS'];
+        $classNumbers = [1, 2];
+
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
+        // Get all teachers
+        $teachers = User::whereHas('role', function ($query) {
+            $query->where('name', 'Teacher');
+        })->get();
+
+        $teacherIndex = 0;
+        foreach ($gradeLevels as $gradeLevel) {
+            foreach ($classTypes as $type) {
+                foreach ($classNumbers as $number) {
+                    $code = $gradeLevel . '-' . $type . $number;
+                    $name = $gradeLevel . ' ' . $type . ' ' . $number;
+
+                    // Create class with teacher_id
+                    SchoolClass::create([
+                        'name' => $name,
+                        'code' => $code,
+                        'academic_year_id' => $activeYear ? $activeYear->id : 1,
+                        'teacher_id' => isset($teachers[$teacherIndex]) ? $teachers[$teacherIndex]->id : null,
+                    ]);
+
+                    $teacherIndex++;
+                }
+            }
         }
     }
 }

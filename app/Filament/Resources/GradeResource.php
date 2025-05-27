@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class GradeResource extends Resource
 {
@@ -55,7 +56,13 @@ class GradeResource extends Resource
                     ->preload(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
-                    ->options(Subject::pluck('name', 'id'))
+                    ->options(function () {
+                        $user = Auth::user();
+                        if ($user && $user->role && $user->role->name === 'Teacher') {
+                            return Subject::where('teacher_id', $user->id)->pluck('name', 'id');
+                        }
+                        return Subject::pluck('name', 'id');
+                    })
                     ->required()
                     ->searchable()
                     ->preload(),

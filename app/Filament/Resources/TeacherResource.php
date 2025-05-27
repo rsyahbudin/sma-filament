@@ -68,7 +68,6 @@ class TeacherResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('subjects')
                             ->relationship('subjects', 'name')
-                            ->multiple()
                             ->preload()
                             ->required(),
                     ]),

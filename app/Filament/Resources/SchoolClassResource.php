@@ -36,7 +36,15 @@ class SchoolClassResource extends Resource
                     ->relationship('academicYear', 'name')
                     ->required(),
                 Forms\Components\Select::make('teacher_id')
-                    ->relationship('teacher', 'name')
+                    ->options(function ($get) {
+                        $currentId = $get('teacher_id');
+                        $usedTeacherIds = \App\Models\SchoolClass::whereNotNull('teacher_id')
+                            ->when($currentId, fn($q) => $q->where('teacher_id', '!=', $currentId))
+                            ->pluck('teacher_id')->toArray();
+                        return \App\Models\User::whereHas('role', fn($q) => $q->where('name', 'Teacher'))
+                            ->whereNotIn('id', $usedTeacherIds)
+                            ->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->preload(),
             ]);

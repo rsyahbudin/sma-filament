@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
             AcademicYearSeeder::class,
             SchoolClassSeeder::class,
             SubjectSeeder::class,
-            TeacherSubjectSeeder::class,
             StudentClassSeeder::class,
             ClassSubjectSeeder::class,
             GradeSeeder::class,

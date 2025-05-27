@@ -15,7 +15,7 @@ class SubjectSeeder extends Seeder
     {
         $teachers = User::whereHas('role', function ($q) {
             $q->where('name', 'Teacher');
-        })->pluck('id');
+        })->get();
         $subjects = [
             ['name' => 'Matematika', 'code' => 'MTK'],
             ['name' => 'Bahasa Indonesia', 'code' => 'BIN'],
@@ -23,11 +23,12 @@ class SubjectSeeder extends Seeder
             ['name' => 'Kimia', 'code' => 'KIM'],
             ['name' => 'Ekonomi', 'code' => 'EKO'],
         ];
-        foreach ($subjects as $subject) {
+        foreach ($subjects as $i => $subject) {
+            $teacher = $teachers[$i] ?? $teachers[0];
             Subject::create([
                 'name' => $subject['name'],
                 'code' => $subject['code'],
-                'teacher_id' => $teachers->random(),
+                'teacher_id' => $teacher->id,
             ]);
         }
     }

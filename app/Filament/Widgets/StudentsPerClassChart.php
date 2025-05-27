@@ -12,6 +12,7 @@ class StudentsPerClassChart extends ChartWidget
 {
     protected static ?string $heading = 'Jumlah Siswa per Kelas';
     protected static ?int $sort = 3;
+    protected int|string|array $columnSpan = 2;
 
     public static function canView(): bool
     {
@@ -45,9 +46,6 @@ class StudentsPerClassChart extends ChartWidget
                 ->count();
             $femaleData[] = $femaleCount;
         }
-
-        Log::info('Male Data:', $maleData);
-        Log::info('Female Data:', $femaleData);
 
         return [
             'datasets' => [
@@ -120,5 +118,10 @@ class StudentsPerClassChart extends ChartWidget
         return [
             'datalabels',
         ];
+    }
+
+    public function getDescription(): ?string
+    {
+        return 'Distribusi jumlah siswa laki-laki dan perempuan di setiap kelas.';
     }
 }

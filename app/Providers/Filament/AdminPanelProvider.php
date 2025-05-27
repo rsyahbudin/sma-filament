@@ -21,7 +21,8 @@ use App\Filament\Widgets\AdminStatsOverview;
 use App\Filament\Widgets\StudentStatsOverview;
 use App\Filament\Widgets\TeachersPerGenderChart;
 use App\Filament\Widgets\StudentsPerClassChart;
-use App\Filament\Widgets\SubjectAverageGradesChart;
+use App\Filament\Widgets\SubjectAverageGradesPerClassChart;
+use App\Filament\Widgets\HomeroomClassStudentsChart;
 use Illuminate\Support\Facades\Auth;
 
 class AdminPanelProvider extends PanelProvider
@@ -49,7 +50,9 @@ class AdminPanelProvider extends PanelProvider
                 StudentStatsOverview::class,
                 TeachersPerGenderChart::class,
                 StudentsPerClassChart::class,
-                SubjectAverageGradesChart::class,
+                // SubjectAverageGradesChart::class, // di-nonaktifkan, hanya tampil per kelas
+                HomeroomClassStudentsChart::class,
+                SubjectAverageGradesPerClassChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

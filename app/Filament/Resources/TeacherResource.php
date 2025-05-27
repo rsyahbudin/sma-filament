@@ -122,4 +122,24 @@ class TeacherResource extends Resource
             'edit' => Pages\EditTeacher::route('/{record}/edit'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::whereHas('role', function ($q) {
+            $q->where('name', 'Teacher');
+        })->count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        $count = static::getModel()::whereHas('role', function ($q) {
+            $q->where('name', 'Teacher');
+        })->count();
+        return "Total Teacher: {$count}";
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+    }
 }

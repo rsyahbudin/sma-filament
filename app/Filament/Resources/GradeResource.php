@@ -15,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
 
 class GradeResource extends Resource
 {
@@ -26,7 +27,7 @@ class GradeResource extends Resource
 
     protected static ?string $navigationLabel = 'Grades';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {
@@ -177,5 +178,60 @@ class GradeResource extends Resource
             'create' => Pages\CreateGrade::route('/create'),
             'edit' => Pages\EditGrade::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Academic Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Grades';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-academic-cap';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 5;
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::count() > 10 ? 'warning' : 'primary';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Total Penilaian';
+    }
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role->name === 'Admin' || Auth::user()->role->name === 'Teacher';
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Teacher';
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return Auth::user()->role->name === 'Teacher';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return Auth::user()->role->name === 'Teacher';
     }
 }

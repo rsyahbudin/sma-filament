@@ -21,6 +21,46 @@ class SchoolClassResource extends Resource
 
     protected static ?string $navigationGroup = 'Academic Management';
 
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Classes';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Academic Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Classes';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-academic-cap';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getNavigationBadge() > 10 ? 'warning' : 'primary';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        $count = static::getModel()::count();
+        return "Total Class: {$count}";
+    }
+
     public static function form(Form $form): Form
     {
         return $form

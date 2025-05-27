@@ -14,9 +14,33 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = Schedule::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $navigationIcon = 'heroicon-o-clock';
 
     protected static ?string $navigationGroup = 'Academic Management';
+
+    protected static ?int $navigationSort = 4;
+
+    protected static ?string $navigationLabel = 'Schedules';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Academic Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Schedules';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-clock';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 4;
+    }
 
     public static function form(Form $form): Form
     {

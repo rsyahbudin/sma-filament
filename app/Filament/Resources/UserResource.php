@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
@@ -21,6 +23,10 @@ class UserResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationGroup = 'User Management';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Users';
 
     public static function form(Form $form): Form
     {
@@ -125,5 +131,66 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'User Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Users';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-users';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getNavigationBadge() > 10 ? 'warning' : 'primary';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        $count = static::getModel()::count();
+        return "Total User: {$count}";
+    }
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return Auth::user()->id === $record->id || Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
     }
 }

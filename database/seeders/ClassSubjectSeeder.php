@@ -18,3 +18,4 @@ class ClassSubjectSeeder extends Seeder
         }
     }
 }
+ 

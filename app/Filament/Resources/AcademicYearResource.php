@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class AcademicYearResource extends Resource
 {
@@ -20,6 +21,10 @@ class AcademicYearResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?string $navigationGroup = 'Academic Management';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Academic Years';
 
     public static function form(Form $form): Form
     {
@@ -88,5 +93,30 @@ class AcademicYearResource extends Resource
             'create' => Pages\CreateAcademicYear::route('/create'),
             'edit' => Pages\EditAcademicYear::route('/{record}/edit'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Academic Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Academic Years';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-calendar';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
     }
 }

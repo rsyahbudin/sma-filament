@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class RoleResource extends Resource
 {
@@ -20,6 +21,10 @@ class RoleResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationGroup = 'User Management';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Roles';
 
     public static function form(Form $form): Form
     {
@@ -78,5 +83,30 @@ class RoleResource extends Resource
             'create' => Pages\CreateRole::route('/create'),
             'edit' => Pages\EditRole::route('/{record}/edit'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'User Management';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Roles';
+    }
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-user-group';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
     }
 }

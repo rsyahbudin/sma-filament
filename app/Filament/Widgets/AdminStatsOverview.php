@@ -53,3 +53,4 @@ class AdminStatsOverview extends BaseWidget
         ];
     }
 }
+ 

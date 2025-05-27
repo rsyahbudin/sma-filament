@@ -173,4 +173,24 @@ class StudentResource extends Resource
             'edit' => Pages\EditStudent::route('/{record}/edit'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::whereHas('role', function ($q) {
+            $q->where('name', 'Student');
+        })->count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        $count = static::getModel()::whereHas('role', function ($q) {
+            $q->where('name', 'Student');
+        })->count();
+        return "Total Student: {$count}";
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+    }
 }

@@ -54,3 +54,4 @@ class StudentStatsOverview extends BaseWidget
         ];
     }
 }
+ 

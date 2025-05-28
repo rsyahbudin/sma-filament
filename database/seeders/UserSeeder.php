@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
@@ -14,86 +13,79 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin
-        $adminRole = Role::where('name', 'Admin')->first();
-        User::create([
+        // Ambil Role IDs
+        $adminRoleId = DB::table('roles')->where('name', 'Admin')->value('id');
+        $teacherRoleId = DB::table('roles')->where('name', 'Teacher')->value('id');
+        $studentRoleId = DB::table('roles')->where('name', 'Student')->value('id');
+
+        // Admin User
+        DB::table('users')->insert([
+            'role_id' => $adminRoleId,
+            'status' => 'active',
             'name' => 'Admin Satu',
             'email' => 'admin1@example.com',
-            'password' => Hash::make('password'),
-            'role_id' => $adminRole->id,
-            'gender' => 'male',
+            'password' => Hash::make('password'), // Ganti dengan password yang kuat di produksi
             'phone' => '081234567887',
             'address' => 'Jl. Admin No. 95',
             'date_of_birth' => '1990-01-01',
+            'gender' => 'male',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
-        // Create 12 teachers
-        $teacherRole = Role::where('name', 'Teacher')->first();
-        $teacherNames = [
-            'Budi Santoso',
-            'Siti Aminah',
-            'Ahmad Hidayat',
-            'Dewi Lestari',
-            'Rudi Hartono',
-            'Nina Wijaya',
-            'Muhammad Ali',
-            'Linda Sari',
-            'Joko Widodo',
-            'Ani Susanti',
-            'Herman Setiawan',
-            'Rina Putri'
+        // Teachers (id 2-13)
+        $teachers = [
+            ['Budi Santoso', 'guru1@example.com', '084284193353', 'Jl. Guru No. 1', '1986-04-03', 'male'],
+            ['Siti Aminah', 'guru2@example.com', '082927791601', 'Jl. Guru No. 2', '1983-12-01', 'female'],
+            ['Ahmad Hidayat', 'guru3@example.com', '089066342814', 'Jl. Guru No. 3', '1989-12-05', 'male'],
+            ['Dewi Lestari', 'guru4@example.com', '081790095235', 'Jl. Guru No. 4', '1981-11-28', 'female'],
+            ['Rudi Hartono', 'guru5@example.com', '084961506689', 'Jl. Guru No. 5', '1987-10-14', 'male'],
+            ['Nina Wijaya', 'guru6@example.com', '086361601903', 'Jl. Guru No. 6', '1989-11-02', 'female'],
+            ['Muhammad Ali', 'guru7@example.com', '088593696929', 'Jl. Guru No. 7', '1981-01-16', 'male'],
+            ['Linda Sari', 'guru8@example.com', '085804563875', 'Jl. Guru No. 8', '1989-10-20', 'female'],
+            ['Joko Widodo', 'guru9@example.com', '086373246259', 'Jl. Guru No. 9', '1987-08-22', 'male'],
+            ['Ani Susanti', 'guru10@example.com', '084475170106', 'Jl. Guru No. 10', '1987-08-15', 'female'],
+            ['Herman Setiawan', 'guru11@example.com', '085446188614', 'Jl. Guru No. 11', '1986-10-24', 'male'],
+            ['Rina Putri', 'guru12@example.com', '087040164147', 'Jl. Guru No. 12', '1988-04-09', 'female'],
         ];
 
-        foreach ($teacherNames as $index => $name) {
-            User::create([
-                'name' => $name,
-                'email' => 'guru' . ($index + 1) . '@example.com',
+        foreach ($teachers as $teacher) {
+            DB::table('users')->insert([
+                'role_id' => $teacherRoleId,
+                'status' => 'active',
+                'name' => $teacher[0],
+                'email' => $teacher[1],
                 'password' => Hash::make('password'),
-                'role_id' => $teacherRole->id,
-                'gender' => $index % 2 == 0 ? 'male' : 'female',
-                'phone' => '08' . rand(1000000000, 9999999999),
-                'address' => 'Jl. Guru No. ' . ($index + 1),
-                'date_of_birth' => rand(1980, 1990) . '-' . str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
+                'phone' => $teacher[2],
+                'address' => $teacher[3],
+                'date_of_birth' => $teacher[4],
+                'gender' => $teacher[5],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
-        // Create students (5 per class)
-        $studentRole = Role::where('name', 'Student')->first();
-        $classes = [
-            'X IPA 1',
-            'X IPA 2',
-            'X IPS 1',
-            'X IPS 2',
-            'XI IPA 1',
-            'XI IPA 2',
-            'XI IPS 1',
-            'XI IPS 2',
-            'XII IPA 1',
-            'XII IPA 2',
-            'XII IPS 1',
-            'XII IPS 2'
-        ];
+        // Students (id 14-73, assuming 60 students as in your SQL dump)
+        // Adjust this loop if you have more/fewer students or different naming conventions
+        for ($i = 1; $i <= 60; $i++) {
+            $gender = ($i % 2 == 0) ? 'male' : 'female'; // Alternating gender for variety
+            $classPrefix = 'X';
+            if ($i > 10 && $i <= 20) $classPrefix = 'XI'; // Adjust class distribution as needed
+            if ($i > 20) $classPrefix = 'XII'; // Adjust class distribution as needed
 
-        $studentIndex = 1;
-        foreach ($classes as $class) {
-            for ($i = 1; $i <= 5; $i++) {
-                $gender = rand(0, 1) ? 'male' : 'female';
-                $name = $gender == 'male' ?
-                    'Siswa ' . $class . ' ' . $i :
-                    'Siswi ' . $class . ' ' . $i;
-
-                User::create([
-                    'name' => $name,
-                    'email' => 'siswa' . $studentIndex . '@example.com',
-                    'password' => Hash::make('password'),
-                    'role_id' => $studentRole->id,
-                    'gender' => $gender,
-                    'phone' => '08' . rand(1000000000, 9999999999),
-                    'address' => 'Jl. Siswa No. ' . $studentIndex,
-                    'date_of_birth' => rand(2005, 2007) . '-' . str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
-                ]);
-                $studentIndex++;
-            }
+            DB::table('users')->insert([
+                'role_id' => $studentRoleId,
+                'status' => 'active',
+                'name' => 'Siswa ' . $classPrefix . ' ' . (($i % 2 == 0) ? 'IPA' : 'IPS') . ' ' . $i, // Example naming
+                'email' => 'siswa' . $i . '@example.com',
+                'password' => Hash::make('password'),
+                'phone' => '08' . rand(1000000000, 9999999999), // Random phone
+                'address' => 'Jl. Siswa No. ' . $i,
+                'date_of_birth' => date('Y-m-d', strtotime('-1' . rand(15, 18) . ' years -' . rand(0, 364) . ' days')), // Random birth date for high school age
+                'gender' => $gender,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 }

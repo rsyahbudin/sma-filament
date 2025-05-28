@@ -83,11 +83,42 @@ class GradeResource extends Resource
                         6 => 'Semester 6',
                     ])
                     ->required(),
-                Forms\Components\TextInput::make('score')
-                    ->required()
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(100),
+                Forms\Components\Section::make('Grade Components')
+                    ->schema([
+                        Forms\Components\TextInput::make('knowledge_score')
+                            ->label('Knowledge Score')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->required(),
+                        Forms\Components\TextInput::make('skill_score')
+                            ->label('Skill Score')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->required(),
+                        Forms\Components\TextInput::make('attitude_score')
+                            ->label('Attitude Score')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->required(),
+                        Forms\Components\TextInput::make('final_score')
+                            ->label('Final Score')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state, $record) {
+                                if ($record) {
+                                    $finalScore = ($record->knowledge_score * 0.4) +
+                                        ($record->skill_score * 0.4) +
+                                        ($record->attitude_score * 0.2);
+                                    $component->state($finalScore);
+                                }
+                            }),
+                    ])->columns(2),
                 Forms\Components\Textarea::make('notes')
                     ->maxLength(65535)
                     ->columnSpanFull(),
@@ -124,14 +155,35 @@ class GradeResource extends Resource
                     ->formatStateUsing(fn(string $state): string => "Semester {$state}")
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('score')
+                Tables\Columns\TextColumn::make('knowledge_score')
+                    ->label('Knowledge')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('skill_score')
+                    ->label('Skill')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('attitude_score')
+                    ->label('Attitude')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('final_score')
+                    ->label('Final Score')
+                    ->numeric()
+                    ->sortable()
+                    ->state(function (Grade $record): float {
+                        return ($record->knowledge_score * 0.4) +
+                            ($record->skill_score * 0.4) +
+                            ($record->attitude_score * 0.2);
+                    }),
                 Tables\Columns\IconColumn::make('is_passed')
                     ->label('Status')
                     ->boolean()
                     ->state(function (Grade $record): bool {
-                        return $record->isPassed();
+                        $finalScore = ($record->knowledge_score * 0.4) +
+                            ($record->skill_score * 0.4) +
+                            ($record->attitude_score * 0.2);
+                        return $finalScore >= 75;
                     }),
             ])
             ->filters([
@@ -160,6 +212,10 @@ class GradeResource extends Resource
                     ->options([
                         1 => 'Semester 1',
                         2 => 'Semester 2',
+                        3 => 'Semester 3',
+                        4 => 'Semester 4',
+                        5 => 'Semester 5',
+                        6 => 'Semester 6',
                     ])
                     ->label('Semester'),
             ])
@@ -170,9 +226,9 @@ class GradeResource extends Resource
                     ->visible(fn() => Auth::user()->role->name === 'Teacher'),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('downloadReport')
-                    ->label('Download Report Card')
-                    ->icon('heroicon-o-document-arrow-down')
+                Tables\Actions\Action::make('generateReport')
+                    ->label('Generate Report Card')
+                    ->icon('heroicon-o-document-text')
                     ->action(function () {
                         $user = Auth::user();
                         $grades = Grade::where('user_id', $user->id)
@@ -183,6 +239,7 @@ class GradeResource extends Resource
                         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.report-card', [
                             'student' => $user,
                             'grades' => $grades,
+                            'generated_at' => now(),
                         ]);
 
                         return response()->streamDownload(function () use ($pdf) {

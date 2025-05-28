@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Subject;
-use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class SubjectSeeder extends Seeder
 {
@@ -13,92 +12,19 @@ class SubjectSeeder extends Seeder
      */
     public function run(): void
     {
-        $subjects = [
-            [
-                'name' => 'Matematika',
-                'code' => 'MTK',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran matematika mencakup aljabar, geometri, dan kalkulus',
-            ],
-            [
-                'name' => 'Fisika',
-                'code' => 'FIS',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran fisika mencakup mekanika, termodinamika, dan elektromagnetik',
-            ],
-            [
-                'name' => 'Kimia',
-                'code' => 'KIM',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran kimia mencakup struktur atom, reaksi kimia, dan stoikiometri',
-            ],
-            [
-                'name' => 'Biologi',
-                'code' => 'BIO',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran biologi mencakup sel, genetika, dan ekosistem',
-            ],
-            [
-                'name' => 'Bahasa Indonesia',
-                'code' => 'BIN',
-                'minimum_score' => 75,
-                'description' => 'Mata pelajaran bahasa Indonesia mencakup tata bahasa, sastra, dan menulis',
-            ],
-            [
-                'name' => 'Bahasa Inggris',
-                'code' => 'BIG',
-                'minimum_score' => 75,
-                'description' => 'Mata pelajaran bahasa Inggris mencakup grammar, reading, dan speaking',
-            ],
-            [
-                'name' => 'Sejarah Indonesia',
-                'code' => 'SEJ',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran sejarah Indonesia mencakup perjuangan kemerdekaan dan perkembangan bangsa',
-            ],
-            [
-                'name' => 'Geografi',
-                'code' => 'GEO',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran geografi mencakup peta, iklim, dan sumber daya alam',
-            ],
-            [
-                'name' => 'Ekonomi',
-                'code' => 'EKO',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran ekonomi mencakup mikroekonomi dan makroekonomi',
-            ],
-            [
-                'name' => 'Sosiologi',
-                'code' => 'SOS',
-                'minimum_score' => 70,
-                'description' => 'Mata pelajaran sosiologi mencakup interaksi sosial dan struktur masyarakat',
-            ],
-            [
-                'name' => 'Pendidikan Agama',
-                'code' => 'PAI',
-                'minimum_score' => 75,
-                'description' => 'Mata pelajaran pendidikan agama mencakup nilai-nilai keagamaan dan moral',
-            ],
-            [
-                'name' => 'Pendidikan Pancasila',
-                'code' => 'PPKN',
-                'minimum_score' => 75,
-                'description' => 'Mata pelajaran pendidikan pancasila mencakup nilai-nilai pancasila dan kewarganegaraan',
-            ],
-        ];
-
-        $teachers = User::whereHas('role', function ($query) {
-            $query->where('name', 'Teacher');
-        })->get();
-
-        foreach ($subjects as $index => $subject) {
-            $createdSubject = Subject::create($subject);
-
-            // Assign teacher to subject
-            if (isset($teachers[$index])) {
-                $createdSubject->teachers()->attach($teachers[$index]->id);
-            }
-        }
+        DB::table('subjects')->insert([
+            ['name' => 'Matematika', 'code' => 'MTK', 'description' => 'Mata pelajaran matematika mencakup aljabar, geometri, dan kalkulus', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Fisika', 'code' => 'FIS', 'description' => 'Mata pelajaran fisika mencakup mekanika, termodinamika, dan elektromagnetik', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Kimia', 'code' => 'KIM', 'description' => 'Mata pelajaran kimia mencakup struktur atom, reaksi kimia, dan stoikiometri', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Biologi', 'code' => 'BIO', 'description' => 'Mata pelajaran biologi mencakup sel, genetika, dan ekosistem', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Bahasa Indonesia', 'code' => 'BIN', 'description' => 'Mata pelajaran bahasa Indonesia mencakup tata bahasa, sastra, dan menulis', 'minimum_score' => 75, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Bahasa Inggris', 'code' => 'BIG', 'description' => 'Mata pelajaran bahasa Inggris mencakup grammar, reading, dan speaking', 'minimum_score' => 75, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Sejarah Indonesia', 'code' => 'SEJ', 'description' => 'Mata pelajaran sejarah Indonesia mencakup perjuangan kemerdekaan dan perkembangan bangsa', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Geografi', 'code' => 'GEO', 'description' => 'Mata pelajaran geografi mencakup peta, iklim, dan sumber daya alam', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Ekonomi', 'code' => 'EKO', 'description' => 'Mata pelajaran ekonomi mencakup mikroekonomi dan makroekonomi', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Sosiologi', 'code' => 'SOS', 'description' => 'Mata pelajaran sosiologi mencakup interaksi sosial dan struktur masyarakat', 'minimum_score' => 70, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Pendidikan Agama', 'code' => 'PAI', 'description' => 'Mata pelajaran pendidikan agama mencakup nilai-nilai keagamaan dan moral', 'minimum_score' => 75, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Pendidikan Pancasila', 'code' => 'PPKN', 'description' => 'Mata pelajaran pendidikan pancasila mencakup nilai-nilai pancasila dan kewarganegaraan', 'minimum_score' => 75, 'teacher_id' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
     }
 }

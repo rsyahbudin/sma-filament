@@ -53,7 +53,8 @@ class UserResource extends Resource
                             ->minLength(8)
                             ->dehydrateStateUsing(fn($state) => Hash::make($state))
                             ->dehydrated(fn($state) => filled($state))
-                            ->required(fn(string $context): bool => $context === 'create'),
+                            ->required(fn(string $context): bool => $context === 'create')
+                            ->visible(fn() => Auth::user()?->role?->name === 'Admin' || Auth::user()?->id === request()->route('record')),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Role Information')
@@ -66,10 +67,10 @@ class UserResource extends Resource
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
                                     $role = \App\Models\Role::find($state);
-                                    if ($role->name === 'Student') {
+                                    if ($role && $role->name === 'Student') {
                                         $set('show_student_fields', true);
                                         $set('show_teacher_fields', false);
-                                    } elseif ($role->name === 'Teacher') {
+                                    } elseif ($role && $role->name === 'Teacher') {
                                         $set('show_student_fields', false);
                                         $set('show_teacher_fields', true);
                                     } else {
@@ -77,7 +78,8 @@ class UserResource extends Resource
                                         $set('show_teacher_fields', false);
                                     }
                                 }
-                            }),
+                            })
+                            ->visible(fn() => Auth::user()?->role?->name === 'Admin'),
                     ]),
 
                 Forms\Components\Section::make('Student Information')
@@ -86,14 +88,10 @@ class UserResource extends Resource
                             ->relationship('classes', 'name')
                             ->multiple()
                             ->preload()
+                            ->searchable()
                             ->visible(fn(callable $get) => $get('show_student_fields')),
                         Forms\Components\TextInput::make('student_id')
                             ->label('Student ID')
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
-                        Forms\Components\Select::make('parent_id')
-                            ->relationship('parent', 'name')
-                            ->searchable()
-                            ->preload()
                             ->visible(fn(callable $get) => $get('show_student_fields')),
                         Forms\Components\Select::make('status')
                             ->options([
@@ -115,11 +113,7 @@ class UserResource extends Resource
                             ->relationship('subjects', 'name')
                             ->multiple()
                             ->preload()
-                            ->visible(fn(callable $get) => $get('show_teacher_fields')),
-                        Forms\Components\Select::make('homeroom_class_id')
-                            ->relationship('homeroomClass', 'name')
                             ->searchable()
-                            ->preload()
                             ->visible(fn(callable $get) => $get('show_teacher_fields')),
                     ])
                     ->visible(fn(callable $get) => $get('show_teacher_fields')),
@@ -192,7 +186,7 @@ class UserResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn(Builder $query) => $query->with('role'));
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['role', 'classes', 'subjects']));
     }
 
     public static function getRelations(): array

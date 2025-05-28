@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\StudentResource\Pages;
 use App\Models\User;
 use App\Models\SchoolClass;
+use App\Models\AcademicYear;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -50,6 +51,26 @@ class StudentResource extends Resource
                             ->tel()
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('student_id')
+                            ->label('Student ID')
+                            ->required()
+                            ->maxLength(255),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Class Information')
+                    ->schema([
+                        Forms\Components\Select::make('academic_year_id')
+                            ->label('Academic Year')
+                            ->options(AcademicYear::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload(),
+                        Forms\Components\Select::make('class_id')
+                            ->label('Class')
+                            ->options(SchoolClass::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload(),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Additional Information')

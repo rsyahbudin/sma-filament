@@ -6,6 +6,7 @@ use App\Filament\Resources\ClassPromotionResource\Pages;
 use App\Models\SchoolClass;
 use App\Models\AcademicYear;
 use App\Models\User;
+use App\Models\PromotionHistory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,6 +17,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\BadgeColumn;
+use Illuminate\Support\Collection;
 
 class ClassPromotionResource extends Resource
 {
@@ -33,68 +47,87 @@ class ClassPromotionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('current_academic_year_id')
-                    ->label('Current Academic Year')
-                    ->options(AcademicYear::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        if ($state) {
-                            $currentYear = AcademicYear::find($state);
-                            $nextYear = AcademicYear::where('start_date', '>', $currentYear->end_date)
-                                ->orderBy('start_date')
-                                ->first();
-                            $set('next_academic_year_id', $nextYear?->id);
-                        }
-                    }),
-                Forms\Components\Select::make('next_academic_year_id')
-                    ->label('Next Academic Year')
-                    ->options(AcademicYear::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->disabled(),
-                Forms\Components\Select::make('current_class_id')
-                    ->label('Current Class')
-                    ->options(SchoolClass::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        if ($state) {
-                            $currentClass = SchoolClass::find($state);
-                            $nextClass = SchoolClass::where('grade_level', $currentClass->grade_level + 1)
-                                ->where('name', 'like', '%' . substr($currentClass->name, -2))
-                                ->first();
-                            $set('next_class_id', $nextClass?->id);
-                        }
-                    }),
-                Forms\Components\Select::make('next_class_id')
-                    ->label('Next Class')
-                    ->options(SchoolClass::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->disabled(),
-                Forms\Components\Section::make('Promotion Criteria')
+                Section::make('Academic Year Selection')
                     ->schema([
-                        Forms\Components\TextInput::make('minimum_average_score')
+                        Select::make('current_academic_year_id')
+                            ->label('Current Academic Year')
+                            ->options(AcademicYear::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $currentYear = AcademicYear::find($state);
+                                    $nextYear = AcademicYear::where('start_date', '>', $currentYear->end_date)
+                                        ->orderBy('start_date')
+                                        ->first();
+                                    $set('next_academic_year_id', $nextYear?->id);
+                                }
+                            }),
+                        Select::make('next_academic_year_id')
+                            ->label('Next Academic Year')
+                            ->options(AcademicYear::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->disabled(),
+                    ])->columns(2),
+
+                Section::make('Class Selection')
+                    ->schema([
+                        Select::make('current_class_id')
+                            ->label('Current Class')
+                            ->options(SchoolClass::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $currentClass = SchoolClass::find($state);
+                                    $nextClass = SchoolClass::where('grade_level', $currentClass->grade_level + 1)
+                                        ->where('name', 'like', '%' . substr($currentClass->name, -2))
+                                        ->first();
+                                    $set('next_class_id', $nextClass?->id);
+                                }
+                            }),
+                        Select::make('next_class_id')
+                            ->label('Next Class')
+                            ->options(SchoolClass::pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->disabled(),
+                    ])->columns(2),
+
+                Section::make('Promotion Criteria')
+                    ->schema([
+                        TextInput::make('minimum_average_score')
                             ->label('Minimum Average Score')
                             ->numeric()
                             ->default(75)
                             ->minValue(0)
                             ->maxValue(100)
                             ->required(),
-                        Forms\Components\TextInput::make('maximum_failed_subjects')
+                        TextInput::make('maximum_failed_subjects')
                             ->label('Maximum Failed Subjects')
                             ->numeric()
                             ->default(2)
                             ->minValue(0)
                             ->required(),
                     ])->columns(2),
+
+                Section::make('Additional Settings')
+                    ->schema([
+                        Toggle::make('send_notifications')
+                            ->label('Send Notifications to Students/Parents')
+                            ->default(true),
+                        Textarea::make('notes')
+                            ->label('Additional Notes')
+                            ->placeholder('Enter any additional notes about this promotion process')
+                            ->rows(3),
+                    ]),
             ]);
     }
 
@@ -102,29 +135,61 @@ class ClassPromotionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Class')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('grade_level')
+                TextColumn::make('grade_level')
                     ->label('Grade Level')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('students_count')
+                TextColumn::make('students_count')
                     ->label('Total Students')
                     ->counts('students')
                     ->sortable(),
+                BadgeColumn::make('status')
+                    ->label('Promotion Status')
+                    ->colors([
+                        'success' => 'completed',
+                        'warning' => 'pending',
+                        'danger' => 'failed',
+                    ])
+                    ->getStateUsing(fn(SchoolClass $record) => $record->promotion_status),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('grade_level')
+                SelectFilter::make('grade_level')
                     ->options([
                         10 => 'Grade 10',
                         11 => 'Grade 11',
                         12 => 'Grade 12',
                     ])
                     ->label('Grade Level'),
+                Filter::make('promotion_status')
+                    ->form([
+                        Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'completed' => 'Completed',
+                                'failed' => 'Failed',
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['status'],
+                            fn(Builder $query, $status): Builder => $query->where('promotion_status', $status),
+                        );
+                    }),
             ])
             ->actions([
-                Tables\Actions\Action::make('process_promotion')
+                Action::make('preview_promotion')
+                    ->label('Preview Promotion')
+                    ->icon('heroicon-o-eye')
+                    ->action(function (SchoolClass $record, array $data) {
+                        // Preview logic here
+                    })
+                    ->form([
+                        // Preview form fields
+                    ]),
+                Action::make('process_promotion')
                     ->label('Process Promotion')
                     ->icon('heroicon-o-arrow-trending-up')
                     ->action(function (SchoolClass $record, array $data) {
@@ -147,22 +212,27 @@ class ClassPromotionResource extends Resource
                                     ->where('semester', 2)
                                     ->get();
 
-                                $averageScore = $grades->avg(function ($grade) {
-                                    return ($grade->knowledge_score * 0.4) +
-                                        ($grade->skill_score * 0.4) +
-                                        ($grade->attitude_score * 0.2);
-                                });
+                                $averageScore = $grades->avg('score');
 
                                 $failedSubjects = $grades->filter(function ($grade) {
-                                    $finalScore = ($grade->knowledge_score * 0.4) +
-                                        ($grade->skill_score * 0.4) +
-                                        ($grade->attitude_score * 0.2);
-                                    return $finalScore < 75;
+                                    return $grade->score < 75;
                                 })->count();
 
                                 // Determine promotion status
                                 $isPromoted = $averageScore >= $data['minimum_average_score'] &&
                                     $failedSubjects <= $data['maximum_failed_subjects'];
+
+                                // Create promotion history record
+                                PromotionHistory::create([
+                                    'student_id' => $student->id,
+                                    'from_class_id' => $record->id,
+                                    'to_class_id' => $isPromoted ? $nextClass->id : $record->id,
+                                    'academic_year_id' => $currentYear->id,
+                                    'average_score' => $averageScore,
+                                    'failed_subjects' => $failedSubjects,
+                                    'is_promoted' => $isPromoted,
+                                    'notes' => $data['notes'] ?? null,
+                                ]);
 
                                 if ($isPromoted) {
                                     // If student is in grade 12, mark as graduated
@@ -182,7 +252,15 @@ class ClassPromotionResource extends Resource
                                         'is_promoted' => false,
                                     ]);
                                 }
+
+                                // Send notification if enabled
+                                if ($data['send_notifications'] ?? false) {
+                                    // Notification logic here
+                                }
                             }
+
+                            // Update class promotion status
+                            $record->update(['promotion_status' => 'completed']);
 
                             DB::commit();
 
@@ -201,45 +279,97 @@ class ClassPromotionResource extends Resource
                         }
                     })
                     ->form([
-                        Forms\Components\Select::make('current_academic_year_id')
-                            ->label('Current Academic Year')
-                            ->options(AcademicYear::pluck('name', 'id'))
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('next_academic_year_id')
-                            ->label('Next Academic Year')
-                            ->options(AcademicYear::pluck('name', 'id'))
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('next_class_id')
-                            ->label('Next Class')
-                            ->options(SchoolClass::pluck('name', 'id'))
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\TextInput::make('minimum_average_score')
-                            ->label('Minimum Average Score')
-                            ->numeric()
-                            ->default(75)
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->required(),
-                        Forms\Components\TextInput::make('maximum_failed_subjects')
-                            ->label('Maximum Failed Subjects')
-                            ->numeric()
-                            ->default(2)
-                            ->minValue(0)
-                            ->required(),
+                        Section::make('Academic Year Selection')
+                            ->schema([
+                                Select::make('current_academic_year_id')
+                                    ->label('Current Academic Year')
+                                    ->options(AcademicYear::pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state) {
+                                            $currentYear = AcademicYear::find($state);
+                                            $nextYear = AcademicYear::where('start_date', '>', $currentYear->end_date)
+                                                ->orderBy('start_date')
+                                                ->first();
+                                            $set('next_academic_year_id', $nextYear?->id);
+                                        }
+                                    }),
+                                Select::make('next_academic_year_id')
+                                    ->label('Next Academic Year')
+                                    ->options(AcademicYear::pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->disabled(),
+                            ])->columns(2),
+
+                        Section::make('Class Selection')
+                            ->schema([
+                                Select::make('next_class_id')
+                                    ->label('Next Class')
+                                    ->options(SchoolClass::pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable()
+                                    ->preload(),
+                            ]),
+
+                        Section::make('Promotion Criteria')
+                            ->schema([
+                                TextInput::make('minimum_average_score')
+                                    ->label('Minimum Average Score')
+                                    ->numeric()
+                                    ->default(75)
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->required(),
+                                TextInput::make('maximum_failed_subjects')
+                                    ->label('Maximum Failed Subjects')
+                                    ->numeric()
+                                    ->default(2)
+                                    ->minValue(0)
+                                    ->required(),
+                            ])->columns(2),
+
+                        Section::make('Additional Settings')
+                            ->schema([
+                                Toggle::make('send_notifications')
+                                    ->label('Send Notifications to Students/Parents')
+                                    ->default(true),
+                                Textarea::make('notes')
+                                    ->label('Additional Notes')
+                                    ->placeholder('Enter any additional notes about this promotion process')
+                                    ->rows(3),
+                            ]),
                     ])
                     ->requiresConfirmation()
                     ->modalHeading('Process Class Promotion')
                     ->modalDescription('Are you sure you want to process the class promotion? This action cannot be undone.')
                     ->modalSubmitActionLabel('Yes, process promotion'),
+                Action::make('view_history')
+                    ->label('View History')
+                    ->icon('heroicon-o-clock')
+                    ->url(fn(SchoolClass $record): string => route('filament.admin.resources.promotion-histories.index', ['class_id' => $record->id])),
+                Action::make('export_report')
+                    ->label('Export Report')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function (SchoolClass $record) {
+                        // Export logic here
+                    }),
             ])
             ->bulkActions([
-                //
+                Tables\Actions\BulkAction::make('bulk_process_promotion')
+                    ->label('Process Promotion for Selected Classes')
+                    ->icon('heroicon-o-arrow-trending-up')
+                    ->action(function (Collection $records, array $data) {
+                        // Bulk process logic here
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Process Multiple Class Promotions')
+                    ->modalDescription('Are you sure you want to process promotions for the selected classes? This action cannot be undone.')
+                    ->modalSubmitActionLabel('Yes, process promotions'),
             ]);
     }
 
@@ -254,6 +384,8 @@ class ClassPromotionResource extends Resource
     {
         return [
             'index' => Pages\ListClassPromotions::route('/'),
+            'create' => Pages\CreateClassPromotion::route('/create'),
+            'edit' => Pages\EditClassPromotion::route('/{record}/edit'),
         ];
     }
 
@@ -279,21 +411,22 @@ class ClassPromotionResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->role->name === 'Admin';
+        $user = Auth::user();
+        return $user->role->name === 'Admin' || $user->role->name === 'Teacher';
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canEdit(Model $record): bool
     {
-        return false;
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canDelete(Model $record): bool
     {
-        return false;
+        return Auth::user()->role->name === 'Admin';
     }
 }

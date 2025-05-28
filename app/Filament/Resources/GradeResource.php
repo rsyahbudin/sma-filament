@@ -83,42 +83,12 @@ class GradeResource extends Resource
                         6 => 'Semester 6',
                     ])
                     ->required(),
-                Forms\Components\Section::make('Grade Components')
-                    ->schema([
-                        Forms\Components\TextInput::make('knowledge_score')
-                            ->label('Knowledge Score')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->required(),
-                        Forms\Components\TextInput::make('skill_score')
-                            ->label('Skill Score')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->required(),
-                        Forms\Components\TextInput::make('attitude_score')
-                            ->label('Attitude Score')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->required(),
-                        Forms\Components\TextInput::make('final_score')
-                            ->label('Final Score')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->afterStateHydrated(function ($component, $state, $record) {
-                                if ($record) {
-                                    $finalScore = ($record->knowledge_score * 0.4) +
-                                        ($record->skill_score * 0.4) +
-                                        ($record->attitude_score * 0.2);
-                                    $component->state($finalScore);
-                                }
-                            }),
-                    ])->columns(2),
+                Forms\Components\TextInput::make('score')
+                    ->label('Score')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->required(),
                 Forms\Components\Textarea::make('notes')
                     ->maxLength(65535)
                     ->columnSpanFull(),
@@ -155,35 +125,15 @@ class GradeResource extends Resource
                     ->formatStateUsing(fn(string $state): string => "Semester {$state}")
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('knowledge_score')
-                    ->label('Knowledge')
+                Tables\Columns\TextColumn::make('score')
+                    ->label('Score')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('skill_score')
-                    ->label('Skill')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('attitude_score')
-                    ->label('Attitude')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('final_score')
-                    ->label('Final Score')
-                    ->numeric()
-                    ->sortable()
-                    ->state(function (Grade $record): float {
-                        return ($record->knowledge_score * 0.4) +
-                            ($record->skill_score * 0.4) +
-                            ($record->attitude_score * 0.2);
-                    }),
                 Tables\Columns\IconColumn::make('is_passed')
                     ->label('Status')
                     ->boolean()
                     ->state(function (Grade $record): bool {
-                        $finalScore = ($record->knowledge_score * 0.4) +
-                            ($record->skill_score * 0.4) +
-                            ($record->attitude_score * 0.2);
-                        return $finalScore >= 75;
+                        return $record->score >= 75;
                     }),
             ])
             ->filters([

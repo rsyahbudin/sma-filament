@@ -53,7 +53,6 @@ class AdminPanelProvider extends PanelProvider
                 StudentStatsOverview::class,
                 TeachersPerGenderChart::class,
                 StudentsPerClassChart::class,
-                // SubjectAverageGradesChart::class, // di-nonaktifkan, hanya tampil per kelas
                 HomeroomClassStudentsChart::class,
                 SubjectAverageGradesPerClassChart::class,
                 StudentGradeStats::class,
@@ -73,6 +72,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->authGuard('web')
+            ->loginRouteSlug('login');
     }
 }

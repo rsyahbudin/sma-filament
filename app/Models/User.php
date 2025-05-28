@@ -68,17 +68,17 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return $this->role->name === 'admin';
+        return $this->role?->name === 'Admin';
     }
 
     public function isTeacher()
     {
-        return $this->role->name === 'teacher';
+        return $this->role?->name === 'Teacher';
     }
 
     public function isStudent()
     {
-        return $this->role->name === 'student';
+        return $this->role?->name === 'Student';
     }
 
     public function classes(): BelongsToMany

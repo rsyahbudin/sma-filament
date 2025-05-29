@@ -95,25 +95,48 @@ class GradeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('Student')
-                    ->searchable()
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('student', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable()
                     ->formatStateUsing(fn($state, $record) => $record->student?->name ?? '-')
                     ->visible(fn() => Auth::user()->role->name !== 'Student'),
                 Tables\Columns\TextColumn::make('subject.name')
                     ->label('Subject')
-                    ->searchable()
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('subject', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
-                Tables\Columns\TextColumn::make('subject.teacher.name')
+                Tables\Columns\TextColumn::make('subject.teachers.name')
                     ->label('Teacher')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('subject.teachers', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable()
+                    ->formatStateUsing(function ($record) {
+                        return $record->subject?->teachers->pluck('name')->join(', ') ?? '-';
+                    }),
                 Tables\Columns\TextColumn::make('class.name')
                     ->label('Class')
-                    ->searchable()
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('class', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('academicYear.name')
                     ->label('Academic Year')
-                    ->searchable()
+                    ->searchable(query: function ($query, $search) {
+                        $query->whereHas('academicYear', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('semester')
                     ->formatStateUsing(fn(string $state): string => "Semester {$state}")
@@ -192,7 +215,7 @@ class GradeResource extends Resource
                         ->visible(fn() => Auth::user()->role->name === 'Teacher'),
                 ]),
             ])
-            ->modifyQueryUsing(fn(Builder $query) => $query->with(['student', 'subject', 'class', 'academicYear']));
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['student', 'subject.teachers', 'class', 'academicYear']));
     }
 
     public static function getRelations(): array
@@ -263,22 +286,23 @@ class GradeResource extends Resource
 
     public static function canCreate(): bool
     {
-        return Auth::user()->role->name === 'Teacher';
+        return Auth::user()->role->name === 'Teacher' || Auth::user()->role->name === 'Admin';
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Auth::user()->role->name === 'Teacher';
+        return Auth::user()->role->name === 'Teacher' || Auth::user()->role->name === 'Admin';
     }
 
     public static function canDelete(Model $record): bool
     {
-        return Auth::user()->role->name === 'Teacher';
+        return Auth::user()->role->name === 'Teacher' || Auth::user()->role->name === 'Admin';
     }
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['student', 'subject.teachers', 'class', 'academicYear']);
 
         if (Auth::user()->role->name === 'Student') {
             return $query->where('user_id', Auth::id());

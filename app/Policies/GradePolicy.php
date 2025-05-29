@@ -13,17 +13,17 @@ class GradePolicy extends BasePolicy
 
     public function create(User $user): bool
     {
-        return $user->role->name === 'Teacher';
+        return $user->role->name === 'Teacher' || $user->role->name === 'Admin';
     }
 
     public function update(User $user, Model $model): bool
     {
-        return $user->role->name === 'Teacher';
+        return $user->role->name === 'Teacher' || $user->role->name === 'Admin';
     }
 
     public function delete(User $user, Model $model): bool
     {
-        return $user->role->name === 'Teacher';
+        return $user->role->name === 'Teacher' || $user->role->name === 'Admin';
     }
 
     public function viewAny(User $user): bool

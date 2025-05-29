@@ -41,3 +41,4 @@ class StudentTransfer extends Model
         return $this->belongsTo(Subject::class);
     }
 }
+ 

@@ -146,7 +146,8 @@ class StudentResource extends Resource
                 Tables\Columns\TextColumn::make('classes.name')
                     ->label('Current Class')
                     ->formatStateUsing(function ($record) {
-                        $currentClass = $record->classes->first();
+                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
+                        $currentClass = $record->classes()->wherePivot('academic_year_id', $currentYear?->id)->first();
                         return $currentClass ? $currentClass->name : '-';
                     })
                     ->listWithLineBreaks(),
@@ -154,7 +155,8 @@ class StudentResource extends Resource
                     ->label('Promotion Status')
                     ->boolean()
                     ->state(function ($record) {
-                        $currentClass = $record->classes->first();
+                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
+                        $currentClass = $record->classes()->wherePivot('academic_year_id', $currentYear?->id)->first();
                         return $currentClass?->pivot->is_promoted ?? false;
                     })
                     ->sortable(),
@@ -224,51 +226,6 @@ class StudentResource extends Resource
                         }
                     })
                     ->visible(fn(User $record) => $record->role->name === 'Student'),
-                Tables\Actions\Action::make('promote')
-                    ->label('Promote')
-                    ->icon('heroicon-o-academic-cap')
-                    ->requiresConfirmation()
-                    ->form([
-                        Forms\Components\Select::make('next_class_id')
-                            ->label('Next Class')
-                            ->options(SchoolClass::pluck('name', 'id'))
-                            ->required(),
-                    ])
-                    ->action(function (User $record, array $data) {
-                        // Calculate average score for the current academic year
-                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
-                        $averageScore = $record->grades()
-                            ->whereHas('academicYear', function ($query) use ($currentYear) {
-                                $query->where('id', $currentYear->id);
-                            })
-                            ->avg('score');
-
-                        if ($averageScore >= 70) {
-                            // Get current class
-                            $currentClass = $record->classes->first();
-
-                            // Update promotion status for current class
-                            if ($currentClass) {
-                                $record->classes()->updateExistingPivot(
-                                    $currentClass->id,
-                                    ['is_promoted' => true]
-                                );
-                            }
-
-                            // Attach student to new class
-                            $record->classes()->attach($data['next_class_id'], [
-                                'is_promoted' => false,
-                                'academic_year_id' => $currentYear->id
-                            ]);
-                        }
-                    })
-                    ->visible(
-                        fn(User $record) =>
-                        auth()->check() &&
-                            auth()->user()->role->name === 'Admin' &&
-                            $record->grades()->exists() &&
-                            !$record->classes->first()?->pivot->is_promoted
-                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

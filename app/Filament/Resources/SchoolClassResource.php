@@ -72,15 +72,27 @@ class SchoolClassResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                Forms\Components\Select::make('level')
+                    ->options(SchoolClass::LEVELS)
+                    ->required(),
+                Forms\Components\Select::make('major')
+                    ->options(SchoolClass::MAJORS)
+                    ->required(),
                 Forms\Components\Select::make('academic_year_id')
                     ->relationship('academicYear', 'name')
                     ->required(),
                 Forms\Components\Select::make('teacher_id')
                     ->options(function ($get) {
                         $currentId = $get('teacher_id');
+                        $academicYearId = $get('academic_year_id');
+
+                        // Hanya cek guru yang sudah jadi wali kelas di tahun ajaran yang sama
                         $usedTeacherIds = \App\Models\SchoolClass::whereNotNull('teacher_id')
+                            ->where('academic_year_id', $academicYearId)
                             ->when($currentId, fn($q) => $q->where('teacher_id', '!=', $currentId))
-                            ->pluck('teacher_id')->toArray();
+                            ->pluck('teacher_id')
+                            ->toArray();
+
                         return \App\Models\User::whereHas('role', fn($q) => $q->where('name', 'Teacher'))
                             ->whereNotIn('id', $usedTeacherIds)
                             ->pluck('name', 'id');
@@ -98,6 +110,12 @@ class SchoolClassResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('code')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('level')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('major')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('academicYear.name')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('teacher.name')
@@ -112,7 +130,12 @@ class SchoolClassResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('level')
+                    ->options(SchoolClass::LEVELS),
+                Tables\Filters\SelectFilter::make('major')
+                    ->options(SchoolClass::MAJORS),
+                Tables\Filters\SelectFilter::make('academic_year')
+                    ->relationship('academicYear', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -121,7 +144,105 @@ class SchoolClassResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('duplicateToNextYear')
+                        ->label('Duplikasi ke Tahun Ajaran Berikutnya')
+                        ->form([
+                            Forms\Components\Select::make('target_year_id')
+                                ->label('Tahun Ajaran Tujuan')
+                                ->options(\App\Models\AcademicYear::orderBy('id', 'desc')->pluck('name', 'id'))
+                                ->required(),
+                        ])
+                        ->action(function (array $data, $records) {
+                            $count = 0;
+                            foreach ($records as $class) {
+                                if (!in_array($class->level, ['X', 'XI'])) continue;
+                                $nextLevel = $class->level === 'X' ? 'XI' : ($class->level === 'XI' ? 'XII' : null);
+                                if (!$nextLevel) continue;
+                                $newName = preg_replace('/^X( |$)/', 'XI ', $class->name);
+                                $newName = preg_replace('/^XI( |$)/', 'XII ', $newName);
+                                if ($class->level === 'X') $newName = preg_replace('/^X( |$)/', 'XI ', $class->name);
+                                if ($class->level === 'XI') $newName = preg_replace('/^XI( |$)/', 'XII ', $class->name);
+                                $newCode = $class->code . '-' . $data['target_year_id'];
+                                $exists = \App\Models\SchoolClass::where('code', $newCode)
+                                    ->where('academic_year_id', $data['target_year_id'])
+                                    ->exists();
+                                if ($exists) continue;
+                                \App\Models\SchoolClass::create([
+                                    'name' => $newName,
+                                    'code' => $newCode,
+                                    'level' => $nextLevel,
+                                    'major' => $class->major,
+                                    'academic_year_id' => $data['target_year_id'],
+                                    'teacher_id' => null,
+                                ]);
+                                $count++;
+                            }
+                            if ($count > 0) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title("Berhasil menduplikasi $count kelas ke tahun ajaran baru.")
+                                    ->success()
+                                    ->send();
+                            } else {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Tidak ada kelas yang diduplikasi (mungkin sudah ada di tahun ajaran tujuan atau bukan kelas X/XI).')
+                                    ->warning()
+                                    ->send();
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->requiresConfirmation()
+                        ->modalHeading('Duplikasi Kelas ke Tahun Ajaran Berikutnya')
+                        ->modalDescription('Semua kelas X dan XI yang dipilih akan diduplikasi ke tahun ajaran tujuan dengan level naik. Wali kelas diisi manual.'),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('generateAllNextYear')
+                    ->label('Generate Kelas Tahun Ajaran Baru')
+                    ->form([
+                        Forms\Components\Select::make('source_year_id')
+                            ->label('Tahun Ajaran Sumber')
+                            ->options(\App\Models\AcademicYear::orderBy('id', 'desc')->pluck('name', 'id'))
+                            ->required(),
+                        Forms\Components\Select::make('target_year_id')
+                            ->label('Tahun Ajaran Tujuan')
+                            ->options(\App\Models\AcademicYear::orderBy('id', 'desc')->pluck('name', 'id'))
+                            ->required(),
+                    ])
+                    ->action(function (array $data) {
+                        $sourceClasses = \App\Models\SchoolClass::where('academic_year_id', $data['source_year_id'])
+                            ->get();
+                        $count = 0;
+                        foreach ($sourceClasses as $class) {
+                            $newCode = $class->code . '-' . $data['target_year_id'];
+                            $exists = \App\Models\SchoolClass::where('code', $newCode)
+                                ->where('academic_year_id', $data['target_year_id'])
+                                ->exists();
+                            if ($exists) continue;
+                            \App\Models\SchoolClass::create([
+                                'name' => $class->name,
+                                'code' => $newCode,
+                                'level' => $class->level,
+                                'major' => $class->major,
+                                'academic_year_id' => $data['target_year_id'],
+                                'teacher_id' => null,
+                            ]);
+                            $count++;
+                        }
+                        if ($count > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Berhasil generate $count kelas ke tahun ajaran baru.")
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Tidak ada kelas yang digenerate (mungkin sudah ada di tahun ajaran tujuan).')
+                                ->warning()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Generate Kelas Tahun Ajaran Baru')
+                    ->modalDescription('Semua kelas (X, XI, XII) dari tahun ajaran sumber akan diduplikasi ke tahun ajaran tujuan. Wali kelas diisi manual.'),
             ]);
     }
 

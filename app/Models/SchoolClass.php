@@ -12,8 +12,21 @@ class SchoolClass extends Model
     protected $fillable = [
         'name',
         'code',
+        'level',
+        'major',
         'academic_year_id',
         'teacher_id',
+    ];
+
+    public const LEVELS = [
+        'X' => 'Kelas X',
+        'XI' => 'Kelas XI',
+        'XII' => 'Kelas XII',
+    ];
+
+    public const MAJORS = [
+        'IPA' => 'Ilmu Pengetahuan Alam',
+        'IPS' => 'Ilmu Pengetahuan Sosial',
     ];
 
     public function academicYear()

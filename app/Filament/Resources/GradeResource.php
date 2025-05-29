@@ -33,59 +33,144 @@ class GradeResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->label('Student')
-                    ->options(User::whereHas('role', function ($query) {
-                        $query->where('name', 'Student');
-                    })->pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $user = \App\Models\User::find($state);
-                        $currentClass = $user?->classes()->latest('student_class.academic_year_id')->first();
-                        $set('class_id', $currentClass?->id);
-                        $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
-                        $set('academic_year_id', $activeYear?->id);
-                    }),
-                Forms\Components\Select::make('class_id')
-                    ->label('Class')
-                    ->options(SchoolClass::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload(),
-                Forms\Components\Select::make('subject_id')
-                    ->label('Subject')
-                    ->options(function () {
-                        $user = Auth::user();
-                        if ($user && $user->role && $user->role->name === 'Teacher') {
-                            return Subject::where('teacher_id', $user->id)->pluck('name', 'id');
-                        }
-                        return Subject::pluck('name', 'id');
-                    })
-                    ->required()
-                    ->searchable()
-                    ->preload(),
-                Forms\Components\Select::make('academic_year_id')
-                    ->label('Academic Year')
-                    ->options(AcademicYear::pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload(),
-                Forms\Components\Select::make('semester')
-                    ->options([
-                        1 => 'Semester 1',
-                        2 => 'Semester 2',
-                    ])
-                    ->required(),
-                Forms\Components\TextInput::make('score')
-                    ->numeric()
-                    ->required()
-                    ->minValue(0)
-                    ->maxValue(100),
-                Forms\Components\Textarea::make('notes')
-                    ->maxLength(255),
+                Forms\Components\Section::make('Student Information')
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->label('Student')
+                            ->options(function () {
+                                $user = Auth::user();
+                                if ($user->role->name === 'Teacher') {
+                                    // Get classes where the teacher teaches
+                                    $teacherClasses = \App\Models\ClassSubjectTeacher::where('teacher_id', $user->id)
+                                        ->pluck('school_class_id');
+
+                                    // Get students in those classes
+                                    return User::whereHas('role', function ($query) {
+                                        $query->where('name', 'Student');
+                                    })
+                                        ->whereHas('classes', function ($query) use ($teacherClasses) {
+                                            $query->whereIn('school_classes.id', $teacherClasses);
+                                        })
+                                        ->pluck('name', 'id');
+                                }
+
+                                return User::whereHas('role', function ($query) {
+                                    $query->where('name', 'Student');
+                                })->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if (!$state) return;
+
+                                $user = User::find($state);
+                                $activeYear = AcademicYear::where('is_active', true)->first();
+
+                                if ($user && $activeYear) {
+                                    $currentClass = $user->classes()
+                                        ->wherePivot('academic_year_id', $activeYear->id)
+                                        ->first();
+
+                                    $set('class_id', $currentClass?->id);
+                                    $set('academic_year_id', $activeYear->id);
+                                }
+                            }),
+                    ])->columns(1),
+
+                Forms\Components\Section::make('Grade Information')
+                    ->schema([
+                        Forms\Components\Select::make('academic_year_id')
+                            ->label('Academic Year')
+                            ->options(function () {
+                                $user = Auth::user();
+                                if ($user->role->name === 'Teacher') {
+                                    return AcademicYear::whereHas('classes.classSubjectTeachers', function ($query) use ($user) {
+                                        $query->where('teacher_id', $user->id);
+                                    })->pluck('name', 'id');
+                                }
+                                return AcademicYear::pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live(),
+
+                        Forms\Components\Select::make('class_id')
+                            ->label('Class')
+                            ->options(function (callable $get) {
+                                $yearId = $get('academic_year_id');
+                                $userId = $get('user_id');
+
+                                if (!$yearId || !$userId) return [];
+
+                                $user = Auth::user();
+                                if ($user->role->name === 'Teacher') {
+                                    return SchoolClass::where('academic_year_id', $yearId)
+                                        ->whereHas('classSubjectTeachers', function ($query) use ($user) {
+                                            $query->where('teacher_id', $user->id);
+                                        })
+                                        ->pluck('name', 'id');
+                                }
+
+                                return SchoolClass::where('academic_year_id', $yearId)
+                                    ->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live(),
+
+                        Forms\Components\Select::make('subject_id')
+                            ->label('Subject')
+                            ->options(function (callable $get) {
+                                $classId = $get('class_id');
+                                $yearId = $get('academic_year_id');
+                                $userId = Auth::id();
+
+                                if (!$classId || !$yearId) return [];
+
+                                $user = Auth::user();
+                                if ($user->role->name === 'Teacher') {
+                                    return Subject::whereHas('classSubjectTeachers', function ($query) use ($classId, $yearId, $userId) {
+                                        $query->where('school_class_id', $classId)
+                                            ->where('academic_year_id', $yearId)
+                                            ->where('teacher_id', $userId);
+                                    })->pluck('name', 'id');
+                                }
+
+                                return Subject::whereHas('classSubjectTeachers', function ($query) use ($classId, $yearId) {
+                                    $query->where('school_class_id', $classId)
+                                        ->where('academic_year_id', $yearId);
+                                })->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live(),
+
+                        Forms\Components\Select::make('semester')
+                            ->options([
+                                1 => 'Semester 1',
+                                2 => 'Semester 2',
+                            ])
+                            ->required()
+                            ->default(1),
+
+                        Forms\Components\TextInput::make('score')
+                            ->numeric()
+                            ->required()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->step(0.01)
+                            ->suffix('%')
+                            ->helperText('Enter score between 0-100'),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                    ])->columns(2),
             ]);
     }
 
@@ -111,17 +196,10 @@ class GradeResource extends Resource
                         });
                     })
                     ->sortable(),
-                Tables\Columns\TextColumn::make('subject.teachers.name')
+                Tables\Columns\TextColumn::make('teacher.name')
                     ->label('Teacher')
-                    ->searchable(query: function ($query, $search) {
-                        $query->whereHas('subject.teachers', function ($q) use ($search) {
-                            $q->where('name', 'like', "%{$search}%");
-                        });
-                    })
-                    ->sortable()
-                    ->formatStateUsing(function ($record) {
-                        return $record->subject?->teachers->pluck('name')->join(', ') ?? '-';
-                    }),
+                    ->formatStateUsing(fn($state, $record) => $record->teacher?->name ?? '-')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('class.name')
                     ->label('Class')
                     ->searchable(query: function ($query, $search) {
@@ -302,10 +380,16 @@ class GradeResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['student', 'subject.teachers', 'class', 'academicYear']);
+            ->with(['student', 'subject', 'class', 'academicYear']);
 
         if (Auth::user()->role->name === 'Student') {
             return $query->where('user_id', Auth::id());
+        }
+
+        if (Auth::user()->role->name === 'Teacher') {
+            return $query->whereHas('subject.classSubjectTeachers', function ($query) {
+                $query->where('teacher_id', Auth::id());
+            });
         }
 
         return $query;

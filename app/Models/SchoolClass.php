@@ -56,4 +56,9 @@ class SchoolClass extends Model
         return $this->belongsToMany(Subject::class, 'class_subject')
             ->withTimestamps();
     }
+
+    public function classSubjectTeachers()
+    {
+        return $this->hasMany(\App\Models\ClassSubjectTeacher::class, 'school_class_id');
+    }
 }

@@ -12,6 +12,7 @@ class Grade extends Model
 
     protected $fillable = [
         'user_id',
+        'teacher_id',
         'subject_id',
         'class_id',
         'academic_year_id',
@@ -42,6 +43,11 @@ class Grade extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
     }
 
     public function isPassed()

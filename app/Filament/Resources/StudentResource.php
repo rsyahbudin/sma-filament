@@ -18,6 +18,9 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use App\Models\AcademicYear;
+use App\Models\StudentClass;
+use App\Models\StudentTransfer;
 
 class StudentResource extends Resource
 {

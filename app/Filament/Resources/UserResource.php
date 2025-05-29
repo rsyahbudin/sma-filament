@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class UserResource extends Resource
 {
@@ -162,7 +161,7 @@ class UserResource extends Resource
                         'inactive' => 'danger',
                         default => 'gray',
                     })
-                    ->visible(fn($record) => $record?->role?->name === 'Student'),
+                    ->visible(fn($record) => $record->role?->name === 'Student'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -181,7 +180,7 @@ class UserResource extends Resource
                         'graduated' => 'Graduated',
                         'inactive' => 'Inactive',
                     ])
-                    ->visible(fn() => Auth::user()?->role?->name === 'Admin'),
+                    ->visible(fn() => Auth::user()->role->name === 'Admin'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -191,8 +190,7 @@ class UserResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->modifyQueryUsing(fn(Builder $query) => $query->with('role'));
+            ]);
     }
 
     public static function getRelations(): array
@@ -213,7 +211,7 @@ class UserResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()?->role?->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function getNavigationGroup(): ?string
@@ -254,28 +252,21 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        $user = Auth::user();
-        \Log::info('User attempting to view users:', [
-            'user_id' => $user?->id,
-            'user_email' => $user?->email,
-            'role_id' => $user?->role_id,
-            'role_name' => $user?->role?->name
-        ]);
-        return $user?->role?->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canCreate(): bool
     {
-        return Auth::user()?->role?->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Auth::user()?->id === $record->id || Auth::user()?->role?->name === 'Admin';
+        return Auth::user()->id === $record->id || Auth::user()->role->name === 'Admin';
     }
 
     public static function canDelete(Model $record): bool
     {
-        return Auth::user()?->role?->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 }

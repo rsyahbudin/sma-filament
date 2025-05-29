@@ -3,10 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Role;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -15,53 +13,24 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Clear existing users
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        User::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // Ambil Role IDs
+        $adminRoleId = DB::table('roles')->where('name', 'Admin')->value('id');
+        $teacherRoleId = DB::table('roles')->where('name', 'Teacher')->value('id');
+        $studentRoleId = DB::table('roles')->where('name', 'Student')->value('id');
 
-        // Get role IDs
-        $adminRole = Role::where('name', 'Admin')->first();
-        $teacherRole = Role::where('name', 'Teacher')->first();
-        $studentRole = Role::where('name', 'Student')->first();
-
-        // Create admin user
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin1@admin.com',
-            'password' => Hash::make('password'),
-            'role_id' => $adminRole->id,
-            'phone' => '081234567890',
-            'address' => 'Jl. Admin No. 1',
+        // Admin User
+        DB::table('users')->insert([
+            'role_id' => $adminRoleId,
+            'status' => 'active',
+            'name' => 'Admin Satu',
+            'email' => 'admin1@example.com',
+            'password' => Hash::make('password'), // Ganti dengan password yang kuat di produksi
+            'phone' => '081234567887',
+            'address' => 'Jl. Admin No. 95',
             'date_of_birth' => '1990-01-01',
             'gender' => 'male',
-            'status' => 'active'
-        ]);
-
-        // Create teacher user
-        User::create([
-            'name' => 'Teacher',
-            'email' => 'teacher@teacher.com',
-            'password' => Hash::make('password'),
-            'role_id' => $teacherRole->id,
-            'phone' => '081234567891',
-            'address' => 'Jl. Teacher No. 1',
-            'date_of_birth' => '1990-01-01',
-            'gender' => 'male',
-            'status' => 'active'
-        ]);
-
-        // Create student user
-        User::create([
-            'name' => 'Student',
-            'email' => 'student@student.com',
-            'password' => Hash::make('password'),
-            'role_id' => $studentRole->id,
-            'phone' => '081234567892',
-            'address' => 'Jl. Student No. 1',
-            'date_of_birth' => '2000-01-01',
-            'gender' => 'male',
-            'status' => 'active'
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         // Teachers (id 2-13)
@@ -81,16 +50,18 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($teachers as $teacher) {
-            User::create([
+            DB::table('users')->insert([
+                'role_id' => $teacherRoleId,
+                'status' => 'active',
                 'name' => $teacher[0],
                 'email' => $teacher[1],
                 'password' => Hash::make('password'),
-                'role_id' => $teacherRole->id,
                 'phone' => $teacher[2],
                 'address' => $teacher[3],
                 'date_of_birth' => $teacher[4],
                 'gender' => $teacher[5],
-                'status' => 'active'
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -102,16 +73,18 @@ class UserSeeder extends Seeder
             if ($i > 10 && $i <= 20) $classPrefix = 'XI'; // Adjust class distribution as needed
             if ($i > 20) $classPrefix = 'XII'; // Adjust class distribution as needed
 
-            User::create([
+            DB::table('users')->insert([
+                'role_id' => $studentRoleId,
+                'status' => 'active',
                 'name' => 'Siswa ' . $classPrefix . ' ' . (($i % 2 == 0) ? 'IPA' : 'IPS') . ' ' . $i, // Example naming
                 'email' => 'siswa' . $i . '@example.com',
                 'password' => Hash::make('password'),
-                'role_id' => $studentRole->id,
                 'phone' => '08' . rand(1000000000, 9999999999), // Random phone
                 'address' => 'Jl. Siswa No. ' . $i,
                 'date_of_birth' => date('Y-m-d', strtotime('-1' . rand(15, 18) . ' years -' . rand(0, 364) . ' days')), // Random birth date for high school age
                 'gender' => $gender,
-                'status' => 'active'
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }

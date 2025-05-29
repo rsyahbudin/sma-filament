@@ -12,7 +12,6 @@ use App\Models\Grade;
 use App\Models\SchoolClass;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\AcademicYear;
 
 class User extends Authenticatable
 {
@@ -29,13 +28,13 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
-        'student_id',
-        'teacher_id',
-        'status',
         'phone',
         'address',
         'date_of_birth',
         'gender',
+        'student_id',
+        'teacher_id',
+        'status',
     ];
 
     /**

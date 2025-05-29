@@ -14,7 +14,6 @@ class SchoolClass extends Model
         'code',
         'academic_year_id',
         'teacher_id',
-        'promotion_status',
     ];
 
     public function academicYear()

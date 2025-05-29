@@ -84,23 +84,14 @@ class UserResource extends Resource
 
                 Forms\Components\Section::make('Student Information')
                     ->schema([
-                        Forms\Components\Select::make('academic_year_id')
-                            ->label('Academic Year')
-                            ->options(function () {
-                                return \App\Models\AcademicYear::pluck('name', 'id');
-                            })
-                            ->required(fn(callable $get) => $get('show_student_fields'))
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
                         Forms\Components\Select::make('class_id')
                             ->relationship('classes', 'name')
                             ->multiple()
                             ->preload()
                             ->searchable()
-                            ->required(fn(callable $get) => $get('show_student_fields'))
                             ->visible(fn(callable $get) => $get('show_student_fields')),
                         Forms\Components\TextInput::make('student_id')
                             ->label('Student ID')
-                            ->required(fn(callable $get) => $get('show_student_fields'))
                             ->visible(fn(callable $get) => $get('show_student_fields')),
                         Forms\Components\Select::make('status')
                             ->options([
@@ -117,7 +108,6 @@ class UserResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('teacher_id')
                             ->label('Teacher ID')
-                            ->required(fn(callable $get) => $get('show_teacher_fields'))
                             ->visible(fn(callable $get) => $get('show_teacher_fields')),
                         Forms\Components\Select::make('subjects')
                             ->relationship('subjects', 'name')

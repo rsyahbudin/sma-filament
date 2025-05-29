@@ -34,11 +34,23 @@ class AcademicYearResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Forms\Components\DatePicker::make('start_date')
+                    ->label('Tanggal Mulai')
                     ->required(),
                 Forms\Components\DatePicker::make('end_date')
+                    ->label('Tanggal Selesai')
                     ->required(),
                 Forms\Components\Toggle::make('is_active')
-                    ->required(),
+                    ->label('Tahun Ajaran Aktif')
+                    ->default(false),
+                Forms\Components\Select::make('source_year_id')
+                    ->label('Duplikasi Kelas dari Tahun Ajaran')
+                    ->helperText('Jika memilih tahun ajaran, semua kelas akan otomatis diduplikasi ke tahun ajaran baru ini.')
+                    ->options(AcademicYear::orderBy('id', 'desc')->pluck('name', 'id'))
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if (!$state) {
+                            // $set('duplicate_classes', false);
+                        }
+                    }),
             ]);
     }
 
@@ -48,12 +60,6 @@ class AcademicYearResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('start_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -118,5 +124,13 @@ class AcademicYearResource extends Resource
     public static function getNavigationSort(): ?int
     {
         return 1;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

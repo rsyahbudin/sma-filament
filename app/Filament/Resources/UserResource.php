@@ -60,68 +60,8 @@ class UserResource extends Resource
                         Forms\Components\Select::make('role_id')
                             ->relationship('role', 'name')
                             ->required()
-                            ->preload()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state) {
-                                    $role = \App\Models\Role::find($state);
-                                    if ($role->name === 'Student') {
-                                        $set('show_student_fields', true);
-                                        $set('show_teacher_fields', false);
-                                    } elseif ($role->name === 'Teacher') {
-                                        $set('show_student_fields', false);
-                                        $set('show_teacher_fields', true);
-                                    } else {
-                                        $set('show_student_fields', false);
-                                        $set('show_teacher_fields', false);
-                                    }
-                                }
-                            }),
+                            ->preload(),
                     ]),
-
-                Forms\Components\Section::make('Student Information')
-                    ->schema([
-                        Forms\Components\Select::make('class_id')
-                            ->relationship('classes', 'name')
-                            ->multiple()
-                            ->preload()
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
-                        Forms\Components\TextInput::make('student_id')
-                            ->label('Student ID')
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
-                        Forms\Components\Select::make('parent_id')
-                            ->relationship('parent', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
-                        Forms\Components\Select::make('status')
-                            ->options([
-                                'active' => 'Active',
-                                'graduated' => 'Graduated',
-                                'inactive' => 'Inactive',
-                            ])
-                            ->default('active')
-                            ->visible(fn(callable $get) => $get('show_student_fields')),
-                    ])
-                    ->visible(fn(callable $get) => $get('show_student_fields')),
-
-                Forms\Components\Section::make('Teacher Information')
-                    ->schema([
-                        Forms\Components\TextInput::make('teacher_id')
-                            ->label('Teacher ID')
-                            ->visible(fn(callable $get) => $get('show_teacher_fields')),
-                        Forms\Components\Select::make('subjects')
-                            ->relationship('subjects', 'name')
-                            ->multiple()
-                            ->preload()
-                            ->visible(fn(callable $get) => $get('show_teacher_fields')),
-                        Forms\Components\Select::make('homeroom_class_id')
-                            ->relationship('homeroomClass', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->visible(fn(callable $get) => $get('show_teacher_fields')),
-                    ])
-                    ->visible(fn(callable $get) => $get('show_teacher_fields')),
 
                 Forms\Components\Section::make('Additional Information')
                     ->schema([
@@ -153,15 +93,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('role.name')
                     ->label('Role')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'active' => 'success',
-                        'graduated' => 'primary',
-                        'inactive' => 'danger',
-                        default => 'gray',
-                    })
-                    ->visible(fn($record) => $record->role?->name === 'Student'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -174,13 +105,6 @@ class UserResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->relationship('role', 'name'),
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'active' => 'Active',
-                        'graduated' => 'Graduated',
-                        'inactive' => 'Inactive',
-                    ])
-                    ->visible(fn() => Auth::user()->role->name === 'Admin'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

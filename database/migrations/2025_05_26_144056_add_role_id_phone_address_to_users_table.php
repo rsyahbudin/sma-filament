@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('phone')->nullable();
-            $table->string('address')->nullable();
+            $table->unsignedBigInteger('role_id')->after('id');
+            $table->string('phone')->nullable()->after('password');
+            $table->string('address')->nullable()->after('phone');
+
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
         });
     }
 
@@ -23,8 +26,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('phone');
-            $table->dropColumn('address');
+            $table->dropForeign(['role_id']);
+            $table->dropColumn(['role_id', 'phone', 'address']);
         });
     }
 };

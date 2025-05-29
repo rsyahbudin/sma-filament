@@ -12,12 +12,13 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        // Delete existing roles to avoid duplicates
-        Role::query()->delete();
-
-        // Create roles
-        Role::create(['name' => 'Admin',  'description' => 'Administrator sistem']);
-        Role::create(['name' => 'Teacher', 'description' => 'Guru pengajar']);
-        Role::create(['name' => 'Student', 'description' => 'Siswa']);
+        $roles = [
+            ['name' => 'Admin', 'description' => 'Administrator sistem'],
+            ['name' => 'Teacher', 'description' => 'Guru pengajar'],
+            ['name' => 'Student', 'description' => 'Siswa'],
+        ];
+        foreach ($roles as $role) {
+            Role::create($role);
+        }
     }
 }

@@ -5,7 +5,6 @@ namespace App\Filament\Resources\ReportResource\Pages;
 use App\Filament\Resources\ReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Support\Facades\Auth;
 
 class ListReports extends ListRecords
 {
@@ -14,8 +13,7 @@ class ListReports extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
-                ->visible(fn() => Auth::user()->role->name === 'Admin'),
+            Actions\CreateAction::make(),
         ];
     }
 }

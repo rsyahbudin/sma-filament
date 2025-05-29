@@ -4,12 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TeacherResource\Pages;
 use App\Models\User;
+use App\Models\Role;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class TeacherResource extends Resource
 {
@@ -48,6 +50,13 @@ class TeacherResource extends Resource
                             ->tel()
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->required()
+                            ->minLength(8)
+                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                            ->dehydrated(fn($state) => filled($state))
+                            ->required(fn(string $context): bool => $context === 'create'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Additional Information')
@@ -72,6 +81,15 @@ class TeacherResource extends Resource
                             ->required(),
                     ]),
             ]);
+    }
+
+    public static function mutateFormDataBeforeSave(array $data): array
+    {
+        $teacherRole = Role::where('name', 'Teacher')->first();
+        if ($teacherRole) {
+            $data['role_id'] = $teacherRole->id;
+        }
+        return $data;
     }
 
     public static function table(Table $table): Table
@@ -141,16 +159,26 @@ class TeacherResource extends Resource
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+        return Auth::user()->id === $record->id || Auth::user()->role->name === 'Admin';
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 
     public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
     }
 }

@@ -28,11 +28,18 @@ class UserResource extends Resource
 
     protected static ?string $navigationLabel = 'Users';
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->whereHas('role', function ($query) {
+            $query->where('name', 'Admin');
+        });
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('User Information')
+                Forms\Components\Section::make('Admin Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -54,14 +61,6 @@ class UserResource extends Resource
                             ->dehydrated(fn($state) => filled($state))
                             ->required(fn(string $context): bool => $context === 'create'),
                     ])->columns(2),
-
-                Forms\Components\Section::make('Role Information')
-                    ->schema([
-                        Forms\Components\Select::make('role_id')
-                            ->relationship('role', 'name')
-                            ->required()
-                            ->preload(),
-                    ]),
 
                 Forms\Components\Section::make('Additional Information')
                     ->schema([

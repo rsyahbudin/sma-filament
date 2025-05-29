@@ -5,13 +5,19 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\StudentResource\Pages;
 use App\Models\User;
 use App\Models\SchoolClass;
+use App\Models\Role;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class StudentResource extends Resource
 {
@@ -50,6 +56,13 @@ class StudentResource extends Resource
                             ->tel()
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->required()
+                            ->minLength(8)
+                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                            ->dehydrated(fn($state) => filled($state))
+                            ->required(fn(string $context): bool => $context === 'create'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Additional Information')
@@ -66,6 +79,54 @@ class StudentResource extends Resource
                             ->required(),
                     ])->columns(2),
             ]);
+    }
+
+    public static function mutateFormDataBeforeSave(array $data): array
+    {
+        $studentRole = Role::where('name', 'Student')->first();
+        if ($studentRole) {
+            $data['role_id'] = $studentRole->id;
+        }
+
+        return $data;
+    }
+
+    public static function afterCreate(Model $record, array $data): void
+    {
+        // If we have a class_id stored, attach the student to the class
+        if (isset($data['_class_id'])) {
+            try {
+                // Get current academic year
+                $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
+
+                if (!$currentYear) {
+                    throw new \Exception('No active academic year found. Please set an active academic year first.');
+                }
+
+                // Insert into student_class with academic_year_id
+                DB::table('student_class')->insert([
+                    'student_id' => $record->id,
+                    'school_class_id' => $data['_class_id'],
+                    'academic_year_id' => $currentYear->id,
+                    'is_promoted' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Log::info('Student attached to class successfully', [
+                    'student_id' => $record->id,
+                    'class_id' => $data['_class_id'],
+                    'academic_year_id' => $currentYear->id
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error attaching student to class: ' . $e->getMessage(), [
+                    'student_id' => $record->id,
+                    'class_id' => $data['_class_id'],
+                    'academic_year_id' => $currentYear->id ?? null
+                ]);
+                throw $e;
+            }
+        }
     }
 
     public static function table(Table $table): Table
@@ -106,6 +167,60 @@ class StudentResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('manageClass')
+                    ->label(fn(User $record) => $record->classes->first() ? 'Change Class' : 'Add to Class')
+                    ->icon('heroicon-o-academic-cap')
+                    ->form([
+                        Forms\Components\Select::make('class_id')
+                            ->label('Class')
+                            ->options(SchoolClass::pluck('name', 'id'))
+                            ->required(),
+                    ])
+                    ->action(function (User $record, array $data) {
+                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
+
+                        if (!$currentYear) {
+                            throw new \Exception('No active academic year found. Please set an active academic year first.');
+                        }
+
+                        // Check if student is already in a class for this academic year
+                        $existingClass = DB::table('student_class')
+                            ->where('student_id', $record->id)
+                            ->where('academic_year_id', $currentYear->id)
+                            ->first();
+
+                        if ($existingClass) {
+                            // Update existing class
+                            DB::table('student_class')
+                                ->where('student_id', $record->id)
+                                ->where('academic_year_id', $currentYear->id)
+                                ->update([
+                                    'school_class_id' => $data['class_id'],
+                                    'updated_at' => now(),
+                                ]);
+
+                            Notification::make()
+                                ->title('Student class updated successfully')
+                                ->success()
+                                ->send();
+                        } else {
+                            // Add student to new class
+                            DB::table('student_class')->insert([
+                                'student_id' => $record->id,
+                                'school_class_id' => $data['class_id'],
+                                'academic_year_id' => $currentYear->id,
+                                'is_promoted' => false,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Student added to class successfully')
+                                ->success()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn(User $record) => $record->role->name === 'Student'),
                 Tables\Actions\Action::make('promote')
                     ->label('Promote')
                     ->icon('heroicon-o-academic-cap')
@@ -192,26 +307,26 @@ class StudentResource extends Resource
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->id === $record->id || auth()->user()->role->name === 'Admin';
+        return Auth::user()->id === $record->id || Auth::user()->role->name === 'Admin';
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 
     public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return in_array(auth()->user()->role->name, ['Admin', 'Teacher', 'Student']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->role->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->role->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 }

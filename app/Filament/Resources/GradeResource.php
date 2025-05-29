@@ -35,25 +35,41 @@ class GradeResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Student Information')
                     ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Student')
+                        Forms\Components\Select::make('academic_year_id')
+                            ->label('Academic Year')
                             ->options(function () {
                                 $user = Auth::user();
                                 if ($user->role->name === 'Teacher') {
-                                    // Get classes where the teacher teaches
+                                    $years = \App\Models\ClassSubjectTeacher::where('teacher_id', $user->id)
+                                        ->pluck('academic_year_id')->unique();
+                                    return \App\Models\AcademicYear::whereIn('id', $years)->pluck('name', 'id');
+                                }
+                                return \App\Models\AcademicYear::pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live(),
+                        Forms\Components\Hidden::make('academic_year_id')
+                            ->dehydrated(fn(callable $get) => $get('academic_year_id') !== null),
+                        Forms\Components\Select::make('user_id')
+                            ->label('Student')
+                            ->options(function (callable $get) {
+                                $yearId = $get('academic_year_id');
+                                $user = Auth::user();
+                                if ($user->role->name === 'Teacher' && $yearId) {
                                     $teacherClasses = \App\Models\ClassSubjectTeacher::where('teacher_id', $user->id)
+                                        ->where('academic_year_id', $yearId)
                                         ->pluck('school_class_id');
-
-                                    // Get students in those classes
                                     return User::whereHas('role', function ($query) {
                                         $query->where('name', 'Student');
                                     })
-                                        ->whereHas('classes', function ($query) use ($teacherClasses) {
-                                            $query->whereIn('school_classes.id', $teacherClasses);
+                                        ->whereHas('classes', function ($query) use ($teacherClasses, $yearId) {
+                                            $query->whereIn('school_classes.id', $teacherClasses)
+                                                ->where('student_class.academic_year_id', $yearId);
                                         })
                                         ->pluck('name', 'id');
                                 }
-
                                 return User::whereHas('role', function ($query) {
                                     $query->where('name', 'Student');
                                 })->pluck('name', 'id');
@@ -62,109 +78,132 @@ class GradeResource extends Resource
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 if (!$state) return;
-
+                                $yearId = $get('academic_year_id');
                                 $user = User::find($state);
-                                $activeYear = AcademicYear::where('is_active', true)->first();
-
-                                if ($user && $activeYear) {
-                                    $currentClass = $user->classes()
-                                        ->wherePivot('academic_year_id', $activeYear->id)
-                                        ->first();
-
-                                    $set('class_id', $currentClass?->id);
-                                    $set('academic_year_id', $activeYear->id);
+                                $teacher = Auth::user();
+                                if (!$user || $teacher->role->name !== 'Teacher' || !$yearId) return;
+                                $currentClass = $user->classes()->wherePivot('academic_year_id', $yearId)->first();
+                                if (!$currentClass) return;
+                                $assignments = \App\Models\ClassSubjectTeacher::where('school_class_id', $currentClass->id)
+                                    ->where('academic_year_id', $yearId)
+                                    ->where('teacher_id', $teacher->id)
+                                    ->get();
+                                if ($assignments->count() === 1) {
+                                    $set('class_id', $currentClass->id);
+                                    $set('subject_id', $assignments->first()->subject_id);
+                                    $set('semester', $assignments->first()->semester);
+                                } else if ($assignments->count() > 1) {
+                                    $set('class_id', $currentClass->id);
+                                    // subject_id dan semester tetap bisa dipilih
                                 }
                             }),
                     ])->columns(1),
 
                 Forms\Components\Section::make('Grade Information')
                     ->schema([
-                        Forms\Components\Select::make('academic_year_id')
-                            ->label('Academic Year')
-                            ->options(function () {
-                                $user = Auth::user();
-                                if ($user->role->name === 'Teacher') {
-                                    return AcademicYear::whereHas('classes.classSubjectTeachers', function ($query) use ($user) {
-                                        $query->where('teacher_id', $user->id);
-                                    })->pluck('name', 'id');
-                                }
-                                return AcademicYear::pluck('name', 'id');
-                            })
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->live(),
-
                         Forms\Components\Select::make('class_id')
                             ->label('Class')
                             ->options(function (callable $get) {
-                                $yearId = $get('academic_year_id');
                                 $userId = $get('user_id');
-
-                                if (!$yearId || !$userId) return [];
-
-                                $user = Auth::user();
-                                if ($user->role->name === 'Teacher') {
-                                    return SchoolClass::where('academic_year_id', $yearId)
-                                        ->whereHas('classSubjectTeachers', function ($query) use ($user) {
-                                            $query->where('teacher_id', $user->id);
-                                        })
-                                        ->pluck('name', 'id');
-                                }
-
-                                return SchoolClass::where('academic_year_id', $yearId)
-                                    ->pluck('name', 'id');
+                                $yearId = $get('academic_year_id');
+                                if (!$userId || !$yearId) return [];
+                                $user = User::find($userId);
+                                $currentClass = $user->classes()->wherePivot('academic_year_id', $yearId)->first();
+                                return $currentClass ? [$currentClass->id => $currentClass->name] : [];
                             })
                             ->required()
-                            ->searchable()
-                            ->preload()
-                            ->live(),
-
+                            ->afterStateHydrated(function (callable $set, callable $get) {
+                                $userId = $get('user_id');
+                                $yearId = $get('academic_year_id');
+                                if (!$userId || !$yearId) return;
+                                $user = User::find($userId);
+                                $currentClass = $user->classes()->wherePivot('academic_year_id', $yearId)->first();
+                                if ($currentClass) {
+                                    $set('class_id', $currentClass->id);
+                                }
+                            }),
                         Forms\Components\Select::make('subject_id')
                             ->label('Subject')
                             ->options(function (callable $get) {
                                 $classId = $get('class_id');
                                 $yearId = $get('academic_year_id');
-                                $userId = Auth::id();
-
-                                if (!$classId || !$yearId) return [];
-
-                                $user = Auth::user();
-                                if ($user->role->name === 'Teacher') {
-                                    return Subject::whereHas('classSubjectTeachers', function ($query) use ($classId, $yearId, $userId) {
-                                        $query->where('school_class_id', $classId)
-                                            ->where('academic_year_id', $yearId)
-                                            ->where('teacher_id', $userId);
-                                    })->pluck('name', 'id');
+                                $teacher = Auth::user();
+                                if ($teacher->role->name === 'Teacher' && $classId && $yearId) {
+                                    $assignments = \App\Models\ClassSubjectTeacher::where('school_class_id', $classId)
+                                        ->where('academic_year_id', $yearId)
+                                        ->where('teacher_id', $teacher->id)
+                                        ->get();
+                                    $subjects = $assignments->pluck('subject_id')->unique();
+                                    return \App\Models\Subject::whereIn('id', $subjects)->pluck('name', 'id');
                                 }
-
-                                return Subject::whereHas('classSubjectTeachers', function ($query) use ($classId, $yearId) {
-                                    $query->where('school_class_id', $classId)
-                                        ->where('academic_year_id', $yearId);
-                                })->pluck('name', 'id');
+                                return [];
                             })
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->live(),
-
+                            ->afterStateHydrated(function (callable $set, callable $get) {
+                                $classId = $get('class_id');
+                                $yearId = $get('academic_year_id');
+                                $teacher = Auth::user();
+                                if ($teacher->role->name === 'Teacher' && $classId && $yearId) {
+                                    $assignments = \App\Models\ClassSubjectTeacher::where('school_class_id', $classId)
+                                        ->where('academic_year_id', $yearId)
+                                        ->where('teacher_id', $teacher->id)
+                                        ->get();
+                                    $subjects = $assignments->pluck('subject_id')->unique();
+                                    if ($subjects->count() === 1) {
+                                        $set('subject_id', $subjects->first());
+                                    }
+                                }
+                            }),
                         Forms\Components\Select::make('semester')
-                            ->options([
-                                1 => 'Semester 1',
-                                2 => 'Semester 2',
-                            ])
+                            ->label('Semester')
+                            ->options(function (callable $get) {
+                                $classId = $get('class_id');
+                                $yearId = $get('academic_year_id');
+                                $subjectId = $get('subject_id');
+                                $teacher = Auth::user();
+                                if ($teacher->role->name === 'Teacher' && $classId && $yearId && $subjectId) {
+                                    $semesters = \App\Models\ClassSubjectTeacher::where('school_class_id', $classId)
+                                        ->where('academic_year_id', $yearId)
+                                        ->where('subject_id', $subjectId)
+                                        ->where('teacher_id', $teacher->id)
+                                        ->pluck('semester')
+                                        ->unique();
+                                    $options = [];
+                                    foreach ($semesters as $s) {
+                                        $options[$s] = 'Semester ' . $s;
+                                    }
+                                    return $options;
+                                }
+                                return [1 => 'Semester 1', 2 => 'Semester 2'];
+                            })
                             ->required()
-                            ->default(1),
-
+                            ->afterStateHydrated(function (callable $set, callable $get) {
+                                $classId = $get('class_id');
+                                $yearId = $get('academic_year_id');
+                                $subjectId = $get('subject_id');
+                                $teacher = Auth::user();
+                                if ($teacher->role->name === 'Teacher' && $classId && $yearId && $subjectId) {
+                                    $semesters = \App\Models\ClassSubjectTeacher::where('school_class_id', $classId)
+                                        ->where('academic_year_id', $yearId)
+                                        ->where('subject_id', $subjectId)
+                                        ->where('teacher_id', $teacher->id)
+                                        ->pluck('semester')
+                                        ->unique();
+                                    if ($semesters->count() === 1) {
+                                        $set('semester', $semesters->first());
+                                    }
+                                }
+                            }),
                         Forms\Components\TextInput::make('score')
                             ->numeric()
                             ->required()
                             ->minValue(0)
                             ->maxValue(100)
                             ->step(0.01)
-                            ->suffix('%')
                             ->helperText('Enter score between 0-100'),
 
                         Forms\Components\Textarea::make('notes')

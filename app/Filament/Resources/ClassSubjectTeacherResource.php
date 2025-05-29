@@ -77,6 +77,13 @@ class ClassSubjectTeacherResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload(),
+                Forms\Components\Select::make('semester')
+                    ->label('Semester')
+                    ->options([
+                        1 => 'Semester 1',
+                        2 => 'Semester 2',
+                    ])
+                    ->required(),
             ]);
     }
 
@@ -88,6 +95,10 @@ class ClassSubjectTeacherResource extends Resource
                 Tables\Columns\TextColumn::make('subject.name')->label('Subject')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('teacher.name')->label('Teacher')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('academicYear.name')->label('Academic Year')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('semester')
+                    ->label('Semester')
+                    ->formatStateUsing(fn($state) => $state == 1 ? 'Semester 1' : 'Semester 2')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])

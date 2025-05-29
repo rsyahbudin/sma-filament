@@ -16,6 +16,7 @@ class ClassSubjectTeacher extends Model
         'subject_id',
         'teacher_id',
         'academic_year_id',
+        'semester',
     ];
 
     public function schoolClass()

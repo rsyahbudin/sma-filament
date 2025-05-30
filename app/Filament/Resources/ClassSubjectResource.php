@@ -28,13 +28,20 @@ class ClassSubjectResource extends Resource
                     ->relationship('academicYear', 'name')
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live(),
                 Forms\Components\Select::make('school_class_id')
                     ->label('Class')
-                    ->relationship('schoolClass', 'name')
+                    ->options(function (callable $get) {
+                        $yearId = $get('academic_year_id');
+                        if (!$yearId) return [];
+                        return \App\Models\SchoolClass::where('academic_year_id', $yearId)
+                            ->pluck('name', 'id');
+                    })
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
                     ->relationship('subject', 'name')

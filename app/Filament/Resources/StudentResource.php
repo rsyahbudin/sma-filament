@@ -146,17 +146,26 @@ class StudentResource extends Resource
                 Tables\Columns\TextColumn::make('classes.name')
                     ->label('Current Class')
                     ->formatStateUsing(function ($record) {
-                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
-                        $currentClass = $record->classes()->wherePivot('academic_year_id', $currentYear?->id)->first();
+                        $currentYear = AcademicYear::where('is_active', true)->first();
+                        if (!$currentYear) return '-';
+
+                        $currentClass = $record->classes()
+                            ->wherePivot('academic_year_id', $currentYear->id)
+                            ->first();
+
                         return $currentClass ? $currentClass->name : '-';
-                    })
-                    ->listWithLineBreaks(),
+                    }),
                 Tables\Columns\IconColumn::make('is_promoted')
                     ->label('Promotion Status')
                     ->boolean()
                     ->state(function ($record) {
-                        $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();
-                        $currentClass = $record->classes()->wherePivot('academic_year_id', $currentYear?->id)->first();
+                        $currentYear = AcademicYear::where('is_active', true)->first();
+                        if (!$currentYear) return false;
+
+                        $currentClass = $record->classes()
+                            ->wherePivot('academic_year_id', $currentYear->id)
+                            ->first();
+
                         return $currentClass?->pivot->is_promoted ?? false;
                     })
                     ->sortable(),
@@ -178,8 +187,19 @@ class StudentResource extends Resource
                     ->form([
                         Forms\Components\Select::make('class_id')
                             ->label('Class')
-                            ->options(SchoolClass::pluck('name', 'id'))
-                            ->required(),
+                            ->options(function () {
+                                $currentYear = AcademicYear::where('is_active', true)->first();
+                                if (!$currentYear) {
+                                    return [];
+                                }
+                                return SchoolClass::where('academic_year_id', $currentYear->id)
+                                    ->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->helperText(function () {
+                                $currentYear = AcademicYear::where('is_active', true)->first();
+                                return $currentYear ? "Classes for Academic Year: {$currentYear->name}" : "No active academic year found";
+                            }),
                     ])
                     ->action(function (User $record, array $data) {
                         $currentYear = \App\Models\AcademicYear::where('is_active', true)->first();

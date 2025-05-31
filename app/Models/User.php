@@ -32,6 +32,7 @@ class User extends Authenticatable
         'date_of_birth',
         'gender',
         'role_id',
+        'nis',
     ];
 
     /**

@@ -91,6 +91,29 @@ class StudentResource extends Resource
             $data['role_id'] = $studentRole->id;
         }
 
+        // Generate NIS if it's a new student
+        if ($studentRole && $studentRole->name === 'Student') {
+            // Get the current year
+            $currentYear = date('Y');
+
+            // Get the last NIS for the current year
+            $lastNIS = User::where('nis', 'like', $currentYear . '%')
+                ->orderBy('nis', 'desc')
+                ->first();
+
+            if ($lastNIS && $lastNIS->nis) {
+                // Extract the sequence number and increment it
+                $sequence = (int)substr($lastNIS->nis, -4);
+                $newSequence = $sequence + 1;
+            } else {
+                // If no NIS exists for this year, start with 1
+                $newSequence = 1;
+            }
+
+            // Format: YYYYXXXX (YYYY = year, XXXX = sequence number)
+            $data['nis'] = $currentYear . str_pad($newSequence, 4, '0', STR_PAD_LEFT);
+        }
+
         return $data;
     }
 
@@ -136,6 +159,10 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('nis')
+                    ->label('NIS')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),

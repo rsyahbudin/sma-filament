@@ -193,12 +193,12 @@ class ClassSubjectTeacherResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return in_array(Auth::user()->role->name, ['Admin', 'Teacher']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 
     public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return in_array(Auth::user()->role->name, ['Admin', 'Teacher']);
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
     }
 
     public static function canCreate(): bool

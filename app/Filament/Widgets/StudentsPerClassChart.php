@@ -7,6 +7,7 @@ use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\AcademicYear;
 
 class StudentsPerClassChart extends ChartWidget
 {
@@ -22,7 +23,11 @@ class StudentsPerClassChart extends ChartWidget
 
     protected function getData(): array
     {
-        $classes = SchoolClass::all();
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $classes = SchoolClass::when($activeYear, function ($query) use ($activeYear) {
+            $query->where('academic_year_id', $activeYear->id);
+        })->get();
+
         $labels = $classes->pluck('name')->toArray();
 
         // Get male students count per class
@@ -31,6 +36,7 @@ class StudentsPerClassChart extends ChartWidget
             $maleCount = DB::table('student_class')
                 ->join('users', 'student_class.student_id', '=', 'users.id')
                 ->where('student_class.school_class_id', $class->id)
+                ->where('student_class.academic_year_id', $activeYear?->id)
                 ->where('users.gender', 'male')
                 ->count();
             $maleData[] = $maleCount;
@@ -42,6 +48,7 @@ class StudentsPerClassChart extends ChartWidget
             $femaleCount = DB::table('student_class')
                 ->join('users', 'student_class.student_id', '=', 'users.id')
                 ->where('student_class.school_class_id', $class->id)
+                ->where('student_class.academic_year_id', $activeYear?->id)
                 ->where('users.gender', 'female')
                 ->count();
             $femaleData[] = $femaleCount;
@@ -122,6 +129,9 @@ class StudentsPerClassChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        return 'Distribusi jumlah siswa laki-laki dan perempuan di setiap kelas.';
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        return $activeYear
+            ? "Distribusi jumlah siswa laki-laki dan perempuan di setiap kelas untuk tahun ajaran {$activeYear->name}."
+            : 'Distribusi jumlah siswa laki-laki dan perempuan di setiap kelas.';
     }
 }

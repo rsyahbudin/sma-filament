@@ -8,6 +8,7 @@ use App\Models\Subject;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AcademicYear;
 
 class AdminStatsOverview extends BaseWidget
 {
@@ -19,6 +20,8 @@ class AdminStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
         $totalTeachers = User::whereHas('role', function ($query) {
             $query->where('name', 'Teacher');
         })->count();
@@ -27,7 +30,10 @@ class AdminStatsOverview extends BaseWidget
             $query->where('name', 'Student');
         })->count();
 
-        $totalClasses = SchoolClass::count();
+        $totalClasses = SchoolClass::when($activeYear, function ($query) use ($activeYear) {
+            $query->where('academic_year_id', $activeYear->id);
+        })->count();
+
         $totalSubjects = Subject::count();
 
         return [
@@ -42,7 +48,7 @@ class AdminStatsOverview extends BaseWidget
                 ->color('primary'),
 
             Stat::make('Total Classes', $totalClasses)
-                ->description('Total number of classes')
+                ->description($activeYear ? "Total classes for {$activeYear->name}" : 'Total classes')
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('warning'),
 
@@ -53,4 +59,3 @@ class AdminStatsOverview extends BaseWidget
         ];
     }
 }
- 

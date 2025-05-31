@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AcademicYear;
 
 class StudentSubjectsTable extends BaseWidget
 {
@@ -22,10 +23,15 @@ class StudentSubjectsTable extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
         return $table
             ->query(
                 Grade::query()
                     ->where('user_id', Auth::id())
+                    ->when($activeYear, function ($query) use ($activeYear) {
+                        $query->where('academic_year_id', $activeYear->id);
+                    })
                     ->whereColumn('score', '<', 'subjects.minimum_score')
                     ->join('subjects', 'grades.subject_id', '=', 'subjects.id')
                     ->join('academic_years', 'grades.academic_year_id', '=', 'academic_years.id')
@@ -55,5 +61,13 @@ class StudentSubjectsTable extends BaseWidget
             ])
             ->defaultSort('score', 'asc')
             ->paginated(false);
+    }
+
+    public function getDescription(): ?string
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        return $activeYear
+            ? "Mata pelajaran yang memerlukan perhatian khusus pada tahun ajaran {$activeYear->name}."
+            : 'Mata pelajaran yang memerlukan perhatian khusus.';
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SchoolClassResource\Pages;
 use App\Filament\Resources\SchoolClassResource\RelationManagers;
 use App\Models\SchoolClass;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class SchoolClassResource extends Resource
 {
@@ -58,47 +60,77 @@ class SchoolClassResource extends Resource
     public static function getNavigationBadgeTooltip(): ?string
     {
         $count = static::getModel()::count();
-        return "Total Class: {$count}";
+        return "Total Classes: {$count}";
     }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('code')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
-                Forms\Components\Select::make('level')
-                    ->options(SchoolClass::LEVELS)
-                    ->required(),
-                Forms\Components\Select::make('major')
-                    ->options(SchoolClass::MAJORS)
-                    ->required(),
-                Forms\Components\Select::make('academic_year_id')
-                    ->relationship('academicYear', 'name')
-                    ->required(),
-                Forms\Components\Select::make('teacher_id')
-                    ->options(function ($get) {
-                        $currentId = $get('teacher_id');
-                        $academicYearId = $get('academic_year_id');
+                Forms\Components\Section::make('Class Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                // Extract level and major from name
+                                $parts = explode(' ', $state);
+                                if (count($parts) >= 2) {
+                                    $level = $parts[0];
+                                    $major = $parts[1];
+                                    $number = $parts[2] ?? '1';
 
-                        // Hanya cek guru yang sudah jadi wali kelas di tahun ajaran yang sama
-                        $usedTeacherIds = \App\Models\SchoolClass::whereNotNull('teacher_id')
-                            ->where('academic_year_id', $academicYearId)
-                            ->when($currentId, fn($q) => $q->where('teacher_id', '!=', $currentId))
-                            ->pluck('teacher_id')
-                            ->toArray();
-
-                        return \App\Models\User::whereHas('role', fn($q) => $q->where('name', 'Teacher'))
-                            ->whereNotIn('id', $usedTeacherIds)
-                            ->pluck('name', 'id');
-                    })
-                    ->searchable()
-                    ->preload(),
+                                    // Generate code based on level and major
+                                    $code = strtoupper($level . $major . $number);
+                                    $set('code', $code);
+                                }
+                            }),
+                        Forms\Components\TextInput::make('code')
+                            ->required()
+                            ->maxLength(255)
+                            ->disabled()
+                            ->dehydrated(),
+                        Forms\Components\Select::make('level')
+                            ->options(SchoolClass::LEVELS)
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                $name = $get('name');
+                                if ($name) {
+                                    $parts = explode(' ', $name);
+                                    if (count($parts) >= 2) {
+                                        $major = $parts[1];
+                                        $number = $parts[2] ?? '1';
+                                        $set('name', $state . ' ' . $major . ' ' . $number);
+                                    }
+                                }
+                            }),
+                        Forms\Components\Select::make('major')
+                            ->options(SchoolClass::MAJORS)
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                $name = $get('name');
+                                if ($name) {
+                                    $parts = explode(' ', $name);
+                                    if (count($parts) >= 2) {
+                                        $level = $parts[0];
+                                        $number = $parts[2] ?? '1';
+                                        $set('name', $level . ' ' . $state . ' ' . $number);
+                                    }
+                                }
+                            }),
+                        Forms\Components\Select::make('academic_year_id')
+                            ->relationship('academicYear', 'name')
+                            ->required(),
+                        Forms\Components\Select::make('teacher_id')
+                            ->label('Class Teacher')
+                            ->relationship('teacher', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])->columns(2),
             ]);
     }
 
@@ -107,9 +139,11 @@ class SchoolClassResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('code')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('level')
                     ->searchable()
                     ->sortable(),
@@ -117,14 +151,13 @@ class SchoolClassResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('academicYear.name')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('teacher.name')
+                    ->label('Class Teacher')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -138,6 +171,7 @@ class SchoolClassResource extends Resource
                     ->relationship('academicYear', 'name'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -162,5 +196,30 @@ class SchoolClassResource extends Resource
             'create' => Pages\CreateSchoolClass::route('/create'),
             'edit' => Pages\EditSchoolClass::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TeacherResource\Pages;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\AcademicYear;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -27,9 +28,16 @@ class TeacherResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->whereHas('role', function ($query) {
-            $query->where('name', 'Teacher');
-        });
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
+        return parent::getEloquentQuery()
+            ->whereHas('role', function ($query) {
+                $query->where('name', 'Teacher');
+            })
+            ->with(['teachingAssignments' => function ($query) use ($activeYear) {
+                $query->where('academic_year_id', $activeYear->id)
+                    ->with(['subject', 'schoolClass', 'academicYear']);
+            }]);
     }
 
     public static function form(Form $form): Form
@@ -72,14 +80,6 @@ class TeacherResource extends Resource
                             ])
                             ->required(),
                     ])->columns(2),
-
-                Forms\Components\Section::make('Teaching Subjects')
-                    ->schema([
-                        Forms\Components\Select::make('subjects')
-                            ->relationship('subjects', 'name')
-                            ->preload()
-                            ->required(),
-                    ]),
             ]);
     }
 
@@ -94,6 +94,8 @@ class TeacherResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -103,9 +105,17 @@ class TeacherResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('subjects.name')
+                Tables\Columns\TextColumn::make('teachingAssignments.subject.name')
                     ->label('Teaching Subjects')
-                    ->listWithLineBreaks(),
+                    ->listWithLineBreaks()
+                    ->formatStateUsing(function ($record) use ($activeYear) {
+                        $subjects = $record->teachingAssignments
+                            ->where('academic_year_id', $activeYear->id)
+                            ->pluck('subject.name')
+                            ->unique()
+                            ->join(', ');
+                        return $subjects ?: '-';
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

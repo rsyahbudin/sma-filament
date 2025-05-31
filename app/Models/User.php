@@ -93,8 +93,14 @@ class User extends Authenticatable
 
     public function subjects(): BelongsToMany
     {
-        return $this->belongsToMany(Subject::class, 'teacher_subject')
+        return $this->belongsToMany(Subject::class, 'class_subject_teacher', 'teacher_id', 'subject_id')
+            ->withPivot('school_class_id', 'academic_year_id', 'semester')
             ->withTimestamps();
+    }
+
+    public function teachingAssignments()
+    {
+        return $this->hasMany(ClassSubjectTeacher::class, 'teacher_id');
     }
 
     public function schedules()

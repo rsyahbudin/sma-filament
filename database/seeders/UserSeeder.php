@@ -22,10 +22,6 @@ class UserSeeder extends Seeder
         // Admins
         $admins = [
             ['name' => 'Admin Satu', 'email' => 'admin1@example.com', 'gender' => 'male'],
-            ['name' => 'Admin Dua', 'email' => 'admin2@example.com', 'gender' => 'female'],
-            ['name' => 'Admin Tiga', 'email' => 'admin3@example.com', 'gender' => 'male'],
-            ['name' => 'Admin Empat', 'email' => 'admin4@example.com', 'gender' => 'female'],
-            ['name' => 'Admin Lima', 'email' => 'admin5@example.com', 'gender' => 'male'],
         ];
         foreach ($admins as $admin) {
             User::create([

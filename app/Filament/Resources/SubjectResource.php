@@ -3,15 +3,13 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SubjectResource\Pages;
-use App\Filament\Resources\SubjectResource\RelationManagers;
 use App\Models\Subject;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class SubjectResource extends Resource
 {
@@ -21,73 +19,66 @@ class SubjectResource extends Resource
 
     protected static ?string $navigationGroup = 'Academic Management';
 
-    protected static ?int $navigationSort = 3;
-
     protected static ?string $navigationLabel = 'Subjects';
 
-    public static function getNavigationGroup(): ?string
-    {
-        return 'Academic Management';
-    }
-
-    public static function getNavigationLabel(): string
-    {
-        return 'Subjects';
-    }
-
-    public static function getNavigationIcon(): ?string
-    {
-        return 'heroicon-o-book-open';
-    }
-
-    public static function getNavigationSort(): ?int
-    {
-        return 3;
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return \App\Models\Subject::count();
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return static::getNavigationBadge() > 10 ? 'warning' : 'primary';
-    }
-
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        $count = static::getModel()::count();
-        return "Total Subject: {$count}";
-    }
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('code')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(65535)
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('minimum_score')
-                    ->required()
-                    ->numeric()
-                    ->default(70)
-                    ->minValue(0)
-                    ->maxValue(100),
-                Forms\Components\Select::make('teachers')
-                    ->label('Teachers')
-                    ->relationship('teachers', 'name')
-                    ->multiple()
-                    ->searchable()
-                    ->preload()
-                    ->required(),
+                Forms\Components\Section::make('Subject Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                // Generate code from name
+                                $words = explode(' ', $state);
+                                $code = '';
+
+                                // Special handling for language subjects
+                                if (str_contains(strtolower($state), 'bahasa')) {
+                                    if (str_contains(strtolower($state), 'indonesia')) {
+                                        $code = 'BIN';
+                                    } elseif (str_contains(strtolower($state), 'inggris')) {
+                                        $code = 'BIG';
+                                    } else {
+                                        // For other languages, take first letter of each word
+                                        foreach ($words as $word) {
+                                            $code .= strtoupper(substr($word, 0, 1));
+                                        }
+                                    }
+                                } else {
+                                    // If single word, take first 3 letters
+                                    if (count($words) === 1) {
+                                        $code = strtoupper(substr($state, 0, 3));
+                                    } else {
+                                        // If multiple words, take first letter of each word
+                                        foreach ($words as $word) {
+                                            $code .= strtoupper(substr($word, 0, 1));
+                                        }
+                                    }
+                                }
+
+                                $set('code', $code);
+                            }),
+                        Forms\Components\TextInput::make('code')
+                            ->required()
+                            ->maxLength(255)
+                            ->disabled()
+                            ->dehydrated(),
+                        Forms\Components\Textarea::make('description')
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('minimum_score')
+                            ->required()
+                            ->numeric()
+                            ->default(70)
+                            ->minValue(0)
+                            ->maxValue(100),
+                    ])->columns(2),
             ]);
     }
 
@@ -96,22 +87,20 @@ class SubjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('teachers.name')
-                    ->label('Teachers')
-                    ->listWithLineBreaks()
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('minimum_score')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('classSubjectTeachers.teacher.name')
+                    ->label('Teachers')
+                    ->listWithLineBreaks()
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -120,6 +109,7 @@ class SubjectResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -144,5 +134,41 @@ class SubjectResource extends Resource
             'create' => Pages\CreateSubject::route('/create'),
             'edit' => Pages\EditSubject::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        $count = static::getModel()::count();
+        return "Total Subjects: {$count}";
+    }
+
+    public static function canViewAny(): bool
+    {
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return in_array(Auth::user()->role->name, ['Admin', 'Teacher', 'Student']);
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
     }
 }

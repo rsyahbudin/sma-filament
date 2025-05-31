@@ -63,6 +63,9 @@ class StudentTransferResource extends Resource
                                 '2' => 'Semester 2',
                             ])
                             ->required(),
+                        Forms\Components\DatePicker::make('transfer_date')
+                            ->label('Tanggal Pindah')
+                            ->required(),
                     ]),
                 Forms\Components\Section::make('Previous Report Card')
                     ->schema([

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
+use App\Filament\Resources\StudentResource\RelationManagers;
 use App\Models\User;
 use App\Models\SchoolClass;
 use App\Models\Role;
@@ -272,7 +273,7 @@ class StudentResource extends Resource
                                 ->send();
                         }
                     })
-                    ->visible(fn(User $record) => $record->role->name === 'Student'),
+                    ->visible(fn() => Auth::user()->role->name === 'Admin'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

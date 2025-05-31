@@ -17,6 +17,7 @@ use App\Models\ClassPromotionHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Auth;
 
 class ClassPromotionResource extends Resource
 {
@@ -29,6 +30,31 @@ class ClassPromotionResource extends Resource
     protected static ?string $navigationLabel = 'Class Promotion';
 
     protected static ?int $navigationSort = 4;
+
+    public static function canViewAny(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()->role->name === 'Admin';
+    }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {

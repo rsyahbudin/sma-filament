@@ -169,7 +169,7 @@ class TeacherResource extends Resource
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return Auth::user()->id === $record->id || Auth::user()->role->name === 'Admin';
+        return Auth::user()->role->name === 'Admin';
     }
 
     public static function canViewAny(): bool

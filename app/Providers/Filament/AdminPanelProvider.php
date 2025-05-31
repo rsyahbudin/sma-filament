@@ -27,6 +27,7 @@ use App\Filament\Widgets\StudentGradeStats;
 use App\Filament\Widgets\StudentSubjectGradesChart;
 use App\Filament\Widgets\StudentSubjectsTable;
 use Illuminate\Support\Facades\Auth;
+use App\Filament\Pages\Auth\EditProfile;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -74,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->authGuard('web')
-            ->loginRouteSlug('login');
+            ->loginRouteSlug('login')
+            ->profile(EditProfile::class);
     }
 }

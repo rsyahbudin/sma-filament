@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\ScheduleResource\Pages;
 
 use App\Filament\Resources\ScheduleResource;
+use App\Filament\Traits\HasRedirectToList;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditSchedule extends EditRecord
 {
+    use HasRedirectToList;
+
     protected static string $resource = ScheduleResource::class;
 
     protected function getHeaderActions(): array

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AcademicYearResource\Pages;
 
 use App\Filament\Resources\AcademicYearResource;
+use App\Filament\Traits\HasRedirectToList;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
@@ -10,6 +11,8 @@ use App\Models\SchoolClass;
 
 class CreateAcademicYear extends CreateRecord
 {
+    use HasRedirectToList;
+
     protected static string $resource = AcademicYearResource::class;
 
     protected function afterCreate(): void

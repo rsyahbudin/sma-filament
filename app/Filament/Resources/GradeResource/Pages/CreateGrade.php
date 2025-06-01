@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\GradeResource\Pages;
 
 use App\Filament\Resources\GradeResource;
+use App\Filament\Traits\HasRedirectToList;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
 class CreateGrade extends CreateRecord
 {
+    use HasRedirectToList;
+
     protected static string $resource = GradeResource::class;
 
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model

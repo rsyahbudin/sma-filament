@@ -3,11 +3,15 @@
 namespace App\Filament\Resources\TeacherResource\Pages;
 
 use App\Filament\Resources\TeacherResource;
+use App\Filament\Traits\HasRedirectToList;
+use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
 
 class CreateTeacher extends CreateRecord
 {
+    use HasRedirectToList;
+
     protected static string $resource = TeacherResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array

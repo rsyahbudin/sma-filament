@@ -82,11 +82,42 @@ class StudentResource extends Resource
                             ])
                             ->required(),
                     ])->columns(2),
+
+                Forms\Components\Section::make('Parent Information')
+                    ->schema([
+                        Forms\Components\Repeater::make('parents')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('phone')
+                                    ->tel()
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('address')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('occupation')
+                                    ->maxLength(255),
+                                Forms\Components\Select::make('type')
+                                    ->options([
+                                        'father' => 'Father',
+                                        'mother' => 'Mother',
+                                        'guardian' => 'Guardian',
+                                    ])
+                                    ->required(),
+                            ])
+                            ->columns(2)
+                            ->minItems(1)
+                            ->maxItems(3)
+                            ->defaultItems(1),
+                    ]),
             ]);
     }
 
     public static function mutateFormDataBeforeSave(array $data): array
     {
+        // Assign student role
         $studentRole = Role::where('name', 'Student')->first();
         if ($studentRole) {
             $data['role_id'] = $studentRole->id;
@@ -153,6 +184,34 @@ class StudentResource extends Resource
                 ]);
                 throw $e;
             }
+        }
+    }
+
+    public static function afterSave(Model $record, array $data): void
+    {
+        try {
+            // Handle parent data for updates
+            if (isset($data['parents'])) {
+                // Delete existing parents
+                $record->parents()->delete();
+
+                // Create new parents
+                foreach ($data['parents'] as $parent) {
+                    $record->parents()->create([
+                        'name' => $parent['name'],
+                        'phone' => $parent['phone'],
+                        'address' => $parent['address'] ?? null,
+                        'occupation' => $parent['occupation'] ?? null,
+                        'type' => $parent['type'],
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error updating parent data: ' . $e->getMessage(), [
+                'student_id' => $record->id,
+                'parent_data' => $data['parents'] ?? []
+            ]);
+            throw $e;
         }
     }
 

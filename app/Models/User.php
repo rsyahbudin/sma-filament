@@ -12,6 +12,7 @@ use App\Models\Grade;
 use App\Models\SchoolClass;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -106,5 +107,10 @@ class User extends Authenticatable
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'teacher_id');
+    }
+
+    public function parents(): HasMany
+    {
+        return $this->hasMany(StudentParent::class, 'student_id');
     }
 }

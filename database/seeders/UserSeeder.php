@@ -37,45 +37,45 @@ class UserSeeder extends Seeder
         }
 
         // Teachers
-        $teachers = [
-            ['name' => 'Budi Santoso', 'email' => 'budi.santoso@example.com', 'gender' => 'male'],
-            ['name' => 'Siti Aminah', 'email' => 'siti.aminah@example.com', 'gender' => 'female'],
-            ['name' => 'Agus Prasetyo', 'email' => 'agus.prasetyo@example.com', 'gender' => 'male'],
-            ['name' => 'Dewi Lestari', 'email' => 'dewi.lestari@example.com', 'gender' => 'female'],
-            ['name' => 'Rudi Hartono', 'email' => 'rudi.hartono@example.com', 'gender' => 'male'],
-        ];
-        foreach ($teachers as $teacher) {
-            User::create([
-                'name' => $teacher['name'],
-                'email' => $teacher['email'],
-                'password' => Hash::make('password'),
-                'role_id' => $teacherRole->id,
-                'gender' => $teacher['gender'],
-                'phone' => '0812345678' . rand(10, 99),
-                'address' => 'Jl. Guru No. ' . rand(1, 99),
-                'date_of_birth' => '1985-01-01',
-            ]);
-        }
+        // $teachers = [
+        //     ['name' => 'Budi Santoso', 'email' => 'budi.santoso@example.com', 'gender' => 'male'],
+        //     ['name' => 'Siti Aminah', 'email' => 'siti.aminah@example.com', 'gender' => 'female'],
+        //     ['name' => 'Agus Prasetyo', 'email' => 'agus.prasetyo@example.com', 'gender' => 'male'],
+        //     ['name' => 'Dewi Lestari', 'email' => 'dewi.lestari@example.com', 'gender' => 'female'],
+        //     ['name' => 'Rudi Hartono', 'email' => 'rudi.hartono@example.com', 'gender' => 'male'],
+        // ];
+        // foreach ($teachers as $teacher) {
+        //     User::create([
+        //         'name' => $teacher['name'],
+        //         'email' => $teacher['email'],
+        //         'password' => Hash::make('password'),
+        //         'role_id' => $teacherRole->id,
+        //         'gender' => $teacher['gender'],
+        //         'phone' => '0812345678' . rand(10, 99),
+        //         'address' => 'Jl. Guru No. ' . rand(1, 99),
+        //         'date_of_birth' => '1985-01-01',
+        //     ]);
+        // }
 
         // Students
-        $students = [
-            ['name' => 'Andi Wijaya', 'email' => 'andi.wijaya@example.com', 'gender' => 'male'],
-            ['name' => 'Putri Ayu', 'email' => 'putri.ayu@example.com', 'gender' => 'female'],
-            ['name' => 'Joko Susilo', 'email' => 'joko.susilo@example.com', 'gender' => 'male'],
-            ['name' => 'Rina Marlina', 'email' => 'rina.marlina@example.com', 'gender' => 'female'],
-            ['name' => 'Dedi Kurniawan', 'email' => 'dedi.kurniawan@example.com', 'gender' => 'male'],
-        ];
-        foreach ($students as $student) {
-            User::create([
-                'name' => $student['name'],
-                'email' => $student['email'],
-                'password' => Hash::make('password'),
-                'role_id' => $studentRole->id,
-                'gender' => $student['gender'],
-                'phone' => '0812345678' . rand(10, 99),
-                'address' => 'Jl. Siswa No. ' . rand(1, 99),
-                'date_of_birth' => '2005-01-01',
-            ]);
-        }
+        // $students = [
+        //     ['name' => 'Andi Wijaya', 'email' => 'andi.wijaya@example.com', 'gender' => 'male'],
+        //     ['name' => 'Putri Ayu', 'email' => 'putri.ayu@example.com', 'gender' => 'female'],
+        //     ['name' => 'Joko Susilo', 'email' => 'joko.susilo@example.com', 'gender' => 'male'],
+        //     ['name' => 'Rina Marlina', 'email' => 'rina.marlina@example.com', 'gender' => 'female'],
+        //     ['name' => 'Dedi Kurniawan', 'email' => 'dedi.kurniawan@example.com', 'gender' => 'male'],
+        // ];
+        // foreach ($students as $student) {
+        //     User::create([
+        //         'name' => $student['name'],
+        //         'email' => $student['email'],
+        //         'password' => Hash::make('password'),
+        //         'role_id' => $studentRole->id,
+        //         'gender' => $student['gender'],
+        //         'phone' => '0812345678' . rand(10, 99),
+        //         'address' => 'Jl. Siswa No. ' . rand(1, 99),
+        //         'date_of_birth' => '2005-01-01',
+        //     ]);
+        // }
     }
 }

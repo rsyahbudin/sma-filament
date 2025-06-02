@@ -105,16 +105,21 @@ class TeacherResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('teachingAssignments.subject.name')
+                    Tables\Columns\TextColumn::make('teachingAssignments')
                     ->label('Teaching Subjects')
-                    ->listWithLineBreaks()
                     ->formatStateUsing(function ($record) use ($activeYear) {
-                        $subjects = $record->teachingAssignments
-                            ->where('academic_year_id', $activeYear->id)
-                            ->pluck('subject.name')
-                            ->unique()
-                            ->join(', ');
-                        return $subjects ?: '-';
+                        // Pastikan relasi sudah dimuat
+                        $assignments = $record->teachingAssignments->where('academic_year_id', $activeYear->id);
+                        
+                        // Ambil nama subject dan unikkan
+                        $subjects = $assignments->pluck('subject.name')->unique()->values();
+                        
+                        if ($subjects->isEmpty()) {
+                            return '-';
+                        }
+                        
+                        // Gabungkan jadi string dipisah koma
+                        return $subjects->join(', ');
                     }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

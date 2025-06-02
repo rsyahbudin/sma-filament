@@ -242,20 +242,6 @@ class StudentResource extends Resource
 
                         return $currentClass ? $currentClass->name : '-';
                     }),
-                Tables\Columns\IconColumn::make('is_promoted')
-                    ->label('Promotion Status')
-                    ->boolean()
-                    ->state(function ($record) {
-                        $currentYear = AcademicYear::where('is_active', true)->first();
-                        if (!$currentYear) return false;
-
-                        $currentClass = $record->classes()
-                            ->wherePivot('academic_year_id', $currentYear->id)
-                            ->first();
-
-                        return $currentClass?->pivot->is_promoted ?? false;
-                    })
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

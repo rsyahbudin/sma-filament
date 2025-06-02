@@ -9,6 +9,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\User;
+use App\Models\SchoolClass;
+use App\Models\AcademicYear;
+
+
 
 class ScheduleResource extends Resource
 {
@@ -49,13 +54,27 @@ class ScheduleResource extends Resource
                 Forms\Components\Section::make('Schedule Information')
                     ->schema([
                         Forms\Components\Select::make('class_id')
-                            ->relationship('class', 'name')
+                            ->label('Class')
+                            ->options(function () {
+                                // Cari academic year yang aktif
+                                $activeYear = AcademicYear::where('is_active', true)->first();
+                                if (!$activeYear) {
+                                    return [];
+                                }
+
+                                return SchoolClass::where('academic_year_id', $activeYear->id)
+                                    ->pluck('name', 'id');
+                            })
                             ->required(),
                         Forms\Components\Select::make('subject_id')
                             ->relationship('subject', 'name')
                             ->required(),
                         Forms\Components\Select::make('teacher_id')
-                            ->relationship('teacher', 'name')
+                            ->options(function () {
+                                return User::whereHas('role', function ($query) {
+                                    $query->where('name', 'Teacher');
+                                })->pluck('name', 'id');
+                            })
                             ->required(),
                         Forms\Components\Select::make('day')
                             ->options([
@@ -68,9 +87,11 @@ class ScheduleResource extends Resource
                             ])
                             ->required(),
                         Forms\Components\TimePicker::make('start_time')
-                            ->required(),
+                            ->required()
+                            ->seconds(false),
                         Forms\Components\TimePicker::make('end_time')
-                            ->required(),
+                            ->required()
+                            ->seconds(false),
                         Forms\Components\Select::make('academic_year_id')
                             ->relationship('academicYear', 'name')
                             ->required(),

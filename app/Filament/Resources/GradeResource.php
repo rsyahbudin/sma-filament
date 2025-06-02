@@ -277,7 +277,11 @@ class GradeResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('student')
-                    ->relationship('student', 'name')
+                    ->options(function () {
+                        return User::whereHas('role', function ($query) {
+                            $query->where('name', 'Student');
+                        })->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->preload()
                     ->label('Student')

@@ -147,7 +147,12 @@ class ClassSubjectTeacherResource extends Resource
                     ->searchable()
                     ->preload(),
                 Tables\Filters\SelectFilter::make('teacher_id')
-                    ->relationship('teacher', 'name')
+                    ->label('Teacher')
+                    ->options(function () {
+                        return User::whereHas('role', function ($query) {
+                            $query->where('name', 'Teacher');
+                        })->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->preload(),
                 Tables\Filters\SelectFilter::make('semester')

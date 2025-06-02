@@ -126,7 +126,11 @@ class SchoolClassResource extends Resource
                             ->required(),
                         Forms\Components\Select::make('teacher_id')
                             ->label('Class Teacher')
-                            ->relationship('teacher', 'name')
+                            ->options(function () {
+                                return User::whereHas('role', function ($query) {
+                                    $query->where('name', 'Teacher');
+                                })->pluck('name', 'id');
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),

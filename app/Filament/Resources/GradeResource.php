@@ -20,6 +20,8 @@ use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Actions\ExportAction;
 use App\Filament\Imports\GradeImporter;
 use App\Filament\Exports\GradeExporter;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\GradesExport;
 
 class GradeResource extends Resource
 {
@@ -314,11 +316,12 @@ class GradeResource extends Resource
                     ->visible(fn() => Auth::user()->role->name === 'Teacher')
                     ->label('Import Nilai')
                     ->icon('heroicon-o-arrow-up-tray'),
-                ExportAction::make('exportGrades')
-                    ->exporter(GradeExporter::class)
-                    ->visible(fn() => Auth::user()->role->name === 'Teacher')
-                    ->label('Export Nilai')
-                    ->icon('heroicon-o-arrow-down-tray'),
+                Tables\Actions\Action::make('exportGrades')
+                    ->label('Export Grades')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(route('export.grades.csv'))  // arahkan ke route controller yang sudah handle export
+                    ->openUrlInNewTab()                 // supaya buka di tab baru (opsional)
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher' || Auth::user()->role->name === 'Admin'),
                 Tables\Actions\Action::make('downloadReport')
                     ->label('Download Report Card')
                     ->icon('heroicon-o-document-arrow-down')
@@ -339,6 +342,13 @@ class GradeResource extends Resource
                         }, "report-card-{$user->name}.pdf");
                     })
                     ->visible(fn() => Auth::user()->role->name === 'Student'),
+
+                Tables\Actions\Action::make('downloadGradesCsv')
+                    ->label('Download Grades CSV')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->url(route('import.template')) // arahkan ke route export csv
+                    ->openUrlInNewTab() // optional, supaya buka di tab baru
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher'),
 
             ])
             ->bulkActions([

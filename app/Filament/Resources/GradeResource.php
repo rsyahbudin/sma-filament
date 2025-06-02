@@ -16,6 +16,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Tables\Actions\ImportAction;
+use Filament\Tables\Actions\ExportAction;
+use App\Filament\Imports\GradeImporter;
+use App\Filament\Exports\GradeExporter;
 
 class GradeResource extends Resource
 {
@@ -305,6 +309,16 @@ class GradeResource extends Resource
                     ->visible(fn() => Auth::user()->role->name === 'Teacher'),
             ])
             ->headerActions([
+                ImportAction::make('importGrades')
+                    ->importer(GradeImporter::class)
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher')
+                    ->label('Import Nilai')
+                    ->icon('heroicon-o-arrow-up-tray'),
+                ExportAction::make('exportGrades')
+                    ->exporter(GradeExporter::class)
+                    ->visible(fn() => Auth::user()->role->name === 'Teacher')
+                    ->label('Export Nilai')
+                    ->icon('heroicon-o-arrow-down-tray'),
                 Tables\Actions\Action::make('downloadReport')
                     ->label('Download Report Card')
                     ->icon('heroicon-o-document-arrow-down')
@@ -325,6 +339,7 @@ class GradeResource extends Resource
                         }, "report-card-{$user->name}.pdf");
                     })
                     ->visible(fn() => Auth::user()->role->name === 'Student'),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

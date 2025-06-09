@@ -115,10 +115,10 @@ class ScheduleResource extends Resource
                 Tables\Columns\TextColumn::make('day')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->time()
+                    ->time('H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->time()
+                    ->time('H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('academicYear.name')
                     ->label('Academic Year')
@@ -129,8 +129,13 @@ class ScheduleResource extends Resource
                     ->relationship('class', 'name'),
                 Tables\Filters\SelectFilter::make('subject')
                     ->relationship('subject', 'name'),
-                Tables\Filters\SelectFilter::make('teacher')
-                    ->relationship('teacher', 'name'),
+                Tables\Filters\SelectFilter::make('teacher_id')
+                    ->label('Teacher')
+                    ->options(function () {
+                        return User::whereHas('role', function ($query) {
+                            $query->where('name', 'Teacher');
+                        })->pluck('name', 'id');
+                    }),
                 Tables\Filters\SelectFilter::make('day')
                     ->options([
                         'Monday' => 'Monday',
@@ -148,7 +153,7 @@ class ScheduleResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ])->visible(fn() => \Illuminate\Support\Facades\Auth::user()->role->name === 'Admin'),
             ]);
     }
 

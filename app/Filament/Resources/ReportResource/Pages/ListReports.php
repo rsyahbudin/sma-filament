@@ -10,10 +10,13 @@ class ListReports extends ListRecords
 {
     protected static string $resource = ReportResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Student Report';
+    }
+
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        return [];
     }
 }

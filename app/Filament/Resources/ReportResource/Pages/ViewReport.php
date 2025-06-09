@@ -12,6 +12,11 @@ class ViewReport extends Page
 {
     protected static string $resource = ReportResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Student Report';
+    }
+
     protected static string $view = 'filament.resources.report-resource.pages.view-report';
 
     public $record;

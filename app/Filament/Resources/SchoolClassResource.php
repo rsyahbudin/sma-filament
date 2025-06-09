@@ -182,7 +182,7 @@ class SchoolClassResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ])->visible(fn() => \Illuminate\Support\Facades\Auth::user()->role->name === 'Admin'),
             ]);
     }
 

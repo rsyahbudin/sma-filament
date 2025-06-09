@@ -10,10 +10,16 @@ class ListStudents extends ListRecords
 {
     protected static string $resource = StudentResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Student';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Create Student'),
         ];
     }
 }

@@ -14,11 +14,21 @@ class CreateTeacher extends CreateRecord
 
     protected static string $resource = TeacherResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Create Teacher';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['password'] = Hash::make('teacher123');
         $data['role_id'] = 2; // ID role Teacher
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        // Additional logic after creating the teacher
     }
 }

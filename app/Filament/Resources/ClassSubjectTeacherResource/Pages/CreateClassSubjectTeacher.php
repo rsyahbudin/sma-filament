@@ -13,9 +13,20 @@ class CreateClassSubjectTeacher extends CreateRecord
 
     protected static string $resource = ClassSubjectTeacherResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Create Teacher Assignment';
+    }
+
     protected function afterCreate(): void
     {
         // Update the teacher_id in the subjects table
         $this->record->subject()->update(['teacher_id' => $this->record->teacher_id]);
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        // Implement the logic to get the redirect URL
+        return ''; // Placeholder return, actual implementation needed
     }
 }

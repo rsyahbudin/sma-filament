@@ -28,7 +28,7 @@ class ClassSubjectTeacherResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Teaching Assignments';
+        return 'Teaching Assignment';
     }
 
     public static function getNavigationGroup(): ?string
@@ -169,7 +169,7 @@ class ClassSubjectTeacherResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ])->visible(fn() => \Illuminate\Support\Facades\Auth::user()->role->name === 'Admin'),
             ])
             ->defaultSort('academic_year_id', 'desc');
     }

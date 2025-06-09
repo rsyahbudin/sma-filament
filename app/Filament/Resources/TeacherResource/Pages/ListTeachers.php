@@ -10,10 +10,16 @@ class ListTeachers extends ListRecords
 {
     protected static string $resource = TeacherResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Teacher';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Create Teacher'),
         ];
     }
 }

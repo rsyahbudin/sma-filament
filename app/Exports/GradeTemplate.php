@@ -25,15 +25,15 @@ class GradeTemplate implements FromCollection, WithHeadings
             ->join('academic_years as ay', 'cst.academic_year_id', '=', 'ay.id')
             ->leftJoin('student_class as stc', function ($join) {
                 $join->on('sc.id', '=', 'stc.school_class_id')
-                     ->on('ay.id', '=', 'stc.academic_year_id');
+                    ->on('ay.id', '=', 'stc.academic_year_id');
             })
             ->leftJoin('users as u_student', 'stc.student_id', '=', 'u_student.id')
             ->leftJoin('grades as g', function ($join) {
                 $join->on('u_student.id', '=', 'g.user_id')
-                     ->on('s.id', '=', 'g.subject_id')
-                     ->on('sc.id', '=', 'g.class_id')
-                     ->on('ay.id', '=', 'g.academic_year_id')
-                     ->on('cst.semester', '=', 'g.semester');
+                    ->on('s.id', '=', 'g.subject_id')
+                    ->on('sc.id', '=', 'g.class_id')
+                    ->on('ay.id', '=', 'g.academic_year_id')
+                    ->on('cst.semester', '=', 'g.semester');
             })
             ->where('u_teacher.id', $this->teacherId)
             ->where('ay.is_active', 1)

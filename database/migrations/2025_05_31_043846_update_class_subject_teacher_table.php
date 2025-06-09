@@ -31,7 +31,7 @@ return new class extends Migration
                 $table->enum('semester', ['odd', 'even'])->default('odd');
                 $table->timestamps();
 
-                $table->unique(['school_class_id', 'subject_id', 'teacher_id', 'academic_year_id', 'semester'], 'unique_class_subject_teacher');
+                $table->unique(['subject_id', 'teacher_id', 'academic_year_id', 'semester'], 'unique_teacher_subject_year_semester');
             });
         }
     }

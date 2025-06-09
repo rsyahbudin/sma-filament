@@ -14,6 +14,11 @@ class CreateStudent extends CreateRecord
 
     protected static string $resource = StudentResource::class;
 
+    public function getHeading(): string
+    {
+        return 'Create Student';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['password'] = Hash::make('student123');

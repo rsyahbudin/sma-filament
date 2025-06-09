@@ -62,11 +62,9 @@ class StudentResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('password')
                             ->password()
-                            ->required()
                             ->minLength(8)
                             ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                            ->dehydrated(fn($state) => filled($state))
-                            ->required(fn(string $context): bool => $context === 'create'),
+                            ->dehydrated(fn($state) => filled($state)),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Additional Information')

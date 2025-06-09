@@ -60,11 +60,9 @@ class TeacherResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('password')
                             ->password()
-                            ->required()
                             ->minLength(8)
                             ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                            ->dehydrated(fn($state) => filled($state))
-                            ->required(fn(string $context): bool => $context === 'create'),
+                            ->dehydrated(fn($state) => filled($state)),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Additional Information')
@@ -105,19 +103,19 @@ class TeacherResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                    Tables\Columns\TextColumn::make('teachingAssignments')
+                Tables\Columns\TextColumn::make('teachingAssignments')
                     ->label('Teaching Subjects')
                     ->formatStateUsing(function ($record) use ($activeYear) {
                         // Pastikan relasi sudah dimuat
                         $assignments = $record->teachingAssignments->where('academic_year_id', $activeYear->id);
-                        
+
                         // Ambil nama subject dan unikkan
                         $subjects = $assignments->pluck('subject.name')->unique()->values();
-                        
+
                         if ($subjects->isEmpty()) {
                             return '-';
                         }
-                        
+
                         // Gabungkan jadi string dipisah koma
                         return $subjects->join(', ');
                     }),

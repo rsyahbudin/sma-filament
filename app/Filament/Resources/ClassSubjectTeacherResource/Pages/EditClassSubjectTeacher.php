@@ -19,4 +19,10 @@ class EditClassSubjectTeacher extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        // Update the teacher_id in the subjects table
+        $this->record->subject()->update(['teacher_id' => $this->record->teacher_id]);
+    }
 }
